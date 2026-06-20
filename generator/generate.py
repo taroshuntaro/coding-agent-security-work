@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from datetime import date
 
 from agentsec import rules, redlines, orchestrate, profile as profile_mod
 
@@ -58,9 +59,12 @@ def main(argv=None):
             print(f"  - {d['rule_ref']}: {d['chosen']} (推奨: {d['recommended']})")
         print("続行するには --allow-redline-override と --approver を指定してください。")
         return 2
+    if args.allow_redline_override and devs and not args.approver.strip():
+        print("エラー: --allow-redline-override 使用時は --approver を指定してください。")
+        return 2
     for d in devs:
         d["approver"] = args.approver
-        d["date"] = __import__("datetime").date.today().isoformat()
+        d["date"] = date.today().isoformat()
 
     files = orchestrate.generate(profile, args.output, devs, args.base_image)
     print(f"{len(files)} 件を {args.output} に生成しました。")

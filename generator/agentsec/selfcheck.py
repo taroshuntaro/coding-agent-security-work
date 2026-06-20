@@ -33,7 +33,8 @@ def _check_managed(path, msgs):
 
 
 def _check_compose(path, msgs):
-    text = Path(path).read_text(encoding="utf-8")
+    lines = Path(path).read_text(encoding="utf-8").splitlines()
+    text = "\n".join(line for line in lines if not line.strip().startswith("#"))
     for needle in FORBIDDEN_COMPOSE:
         if needle in text:
             msgs.append(f"FAIL {path}: '{needle}' を検出 (09.2)")

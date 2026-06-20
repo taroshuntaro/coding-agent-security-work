@@ -15,7 +15,7 @@ class TestOrchestrate(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             files = orchestrate.generate(self._profile(), d, [], "node:20-bookworm-slim")
             self.assertIn("claude-code/.claude/settings.json", files)
-            self.assertIn("claude-code/managed-settings.json", files)
+            self.assertNotIn("claude-code/managed-settings.json", files)
             self.assertIn("codex/.codex/config.toml", files)
             self.assertIn("docker-compose.yml", files)
             self.assertIn("generation-profile.json", files)

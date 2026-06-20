@@ -39,7 +39,7 @@ def generate(profile, output_dir, deviations, base_image):
         files["claude-code/.claude/settings.json"] = _write(
             output_dir, "claude-code/.claude/settings.json",
             _json(build_claude.build_settings(lvl, stacks_keys, domains, extra)))
-        if plan == "team":
+        if plan == "team" and lvl in ("L3", "L4"):
             files["claude-code/managed-settings.json"] = _write(
                 output_dir, "claude-code/managed-settings.json",
                 _json(build_claude.build_managed_settings(lvl, stacks_keys, domains, extra, [])))

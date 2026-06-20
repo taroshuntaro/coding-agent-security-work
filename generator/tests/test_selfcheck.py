@@ -40,6 +40,14 @@ class TestSelfcheck(unittest.TestCase):
             self.assertEqual(code, 2)
             self.assertTrue(any("docker.sock" in m for m in msgs))
 
+    def test_compose_comment_with_forbidden_token_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "docker-compose.yml",
+                   "# privileged mode and docker.sock are intentionally not used\n"
+                   "services:\n  dev:\n    image: node:20\n")
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)
+
     def test_recorded_redline_still_fails(self):
         with tempfile.TemporaryDirectory() as d:
             _write(d, "generation-profile.json", json.dumps({
