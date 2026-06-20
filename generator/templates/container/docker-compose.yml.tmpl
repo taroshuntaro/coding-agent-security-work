@@ -1,0 +1,19 @@
+# docs/09-containers.md 準拠。特権モード / ホストネットワーク / ソケットマウントは使用しない。
+services:
+  $service_name:
+    build: .
+    user: agent
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 512
+    mem_limit: 2g
+    cpus: 2.0
+    volumes:
+      # 対象リポジトリだけをマウント（read-only を優先、編集が必要なら rw）
+      - ./:/workspace:rw
+    # エグレスは必要ドメインのみ。ホストネットワークは使わない。
