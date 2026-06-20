@@ -10,6 +10,9 @@ REQUIRED_KEYS = ("products", "level", "plan", "stacks", "allowed_domains",
                  "extra_deny_paths", "use_container")
 
 
+_OPTIONAL_BOOL_KEYS = ("use_full_access", "share_docker_socket", "network_host", "direct_push")
+
+
 def validate(profile):
     for key in REQUIRED_KEYS:
         if key not in profile:
@@ -21,6 +24,9 @@ def validate(profile):
     for p in profile["products"]:
         if p not in rules.PRODUCTS:
             raise ValueError(f"invalid product: {p}")
+    for key in _OPTIONAL_BOOL_KEYS:
+        if key in profile and not isinstance(profile[key], bool):
+            raise ValueError(f"{key} must be a bool when present")
 
 
 def load(path):

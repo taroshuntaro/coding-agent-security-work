@@ -5,5 +5,9 @@
   "stacks": ["npm"],
   "allowed_domains": ["github.com", "objects.githubusercontent.com"],
   "extra_deny_paths": [],
-  "use_container": true
+  "use_container": true,
+  "use_full_access": false,
+  "share_docker_socket": false,
+  "network_host": false,
+  "direct_push": false
 }

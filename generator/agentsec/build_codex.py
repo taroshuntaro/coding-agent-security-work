@@ -10,6 +10,16 @@ def _filesystem_deny_paths(extra_deny_paths):
 
 def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
     prof = rules.level_profile(level)
+    header = "# ~/.codex/config.toml\n# extends = \":workspace\" を前提とする（適用時に確認）\n"
+
+    if level == "L1":
+        config = {
+            "approval_policy": "on-request",
+            "web_search": prof["web_search"],
+            "default_permissions": ":read-only",
+        }
+        return header + render_toml.dumps(config)
+
     workspace_roots = {p: "deny" for p in _filesystem_deny_paths(extra_deny_paths)}
     workspace_roots[".devcontainer"] = "read"
 
@@ -20,6 +30,7 @@ def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
         "default_permissions": "business-workspace",
         "permissions": {
             "business-workspace": {
+                "extends": ":workspace",
                 "description": "Workspace editing with restricted network",
                 "filesystem": {
                     ":root": "deny",
@@ -36,7 +47,6 @@ def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
             "enabled": True,
             "domains": {d: "allow" for d in allowed_domains},
         }
-    header = "# ~/.codex/config.toml\n# extends = \":workspace\" を前提とする（適用時に確認）\n"
     return header + render_toml.dumps(config)
 
 
@@ -55,6 +65,7 @@ def build_requirements(level, allowed_domains, extra_deny_paths):
                 "deny_read": _filesystem_deny_paths(extra_deny_paths) + rules.CREDENTIAL_DIRS,
             },
             "org-workspace": {
+                "extends": ":workspace",
                 "description": "Managed workspace access with sensitive files denied",
                 "filesystem": {":root": "deny", ":minimal": "read", "glob_scan_max_depth": 4},
                 "network": {"enabled": bool(allowed_domains)},

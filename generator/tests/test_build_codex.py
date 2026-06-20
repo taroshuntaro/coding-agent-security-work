@@ -25,3 +25,20 @@ class TestBuildCodex(unittest.TestCase):
         toml = build_codex.build_requirements("L3", ["github.com"], [])
         self.assertIn('decision = "forbidden"', toml)
         self.assertIn("git", toml)
+
+    def test_config_l1_is_read_only(self):
+        toml = build_codex.build_config("L1", ["npm"], ["github.com"], [])
+        parsed = tomllib.loads(toml)
+        self.assertEqual(parsed["default_permissions"], ":read-only")
+        self.assertEqual(parsed["approval_policy"], "on-request")
+        self.assertNotIn("business-workspace", parsed.get("permissions", {}))
+
+    def test_config_l2_business_workspace_extends(self):
+        toml = build_codex.build_config("L2", ["npm"], ["github.com"], [])
+        parsed = tomllib.loads(toml)
+        self.assertEqual(parsed["permissions"]["business-workspace"]["extends"], ":workspace")
+
+    def test_requirements_org_workspace_extends(self):
+        toml = build_codex.build_requirements("L2", ["github.com"], [])
+        parsed = tomllib.loads(toml)
+        self.assertEqual(parsed["permissions"]["org-workspace"]["extends"], ":workspace")

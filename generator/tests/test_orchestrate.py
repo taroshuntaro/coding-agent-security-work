@@ -2,7 +2,8 @@ import unittest
 import tempfile
 import os
 import json
-from agentsec import orchestrate, selfcheck
+from pathlib import Path
+from agentsec import orchestrate, selfcheck, deviation
 
 
 class TestOrchestrate(unittest.TestCase):
@@ -44,3 +45,27 @@ class TestOrchestrate(unittest.TestCase):
             self.assertIn("claude-code/managed-settings.json", files)
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 0, msgs)
+
+    def test_redline_override_records_deviation_and_selfcheck_fails(self):
+        dev = deviation.make(
+            "redline", "00 R3", "bypass used", "no bypass",
+            reason="legacy", approver="alice", date="2026-06-21")
+        profile = {"products": ["claude", "codex"], "level": "L2", "plan": "team",
+                   "stacks": ["npm"], "allowed_domains": ["github.com"],
+                   "extra_deny_paths": [], "use_container": True,
+                   "use_full_access": False, "share_docker_socket": False,
+                   "network_host": False, "direct_push": False}
+        with tempfile.TemporaryDirectory() as d:
+            files = orchestrate.generate(profile, d, [dev], "node:20-bookworm-slim")
+            # generation-profile.json contains the redline deviation
+            gen_profile_path = files["generation-profile.json"]
+            gen_profile = json.loads(Path(gen_profile_path).read_text(encoding="utf-8"))
+            self.assertTrue(len(gen_profile["deviations"]) > 0)
+            self.assertEqual(gen_profile["deviations"][0]["type"], "redline")
+            # POLICY-SHEET.md contains the approver
+            policy_path = files["POLICY-SHEET.md"]
+            policy_text = Path(policy_path).read_text(encoding="utf-8")
+            self.assertIn("alice", policy_text)
+            # selfcheck returns exit code 2 for a recorded redline
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2, msgs)

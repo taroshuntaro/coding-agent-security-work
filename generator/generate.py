@@ -30,9 +30,15 @@ def _collect_interactive():
     extra = _ask("追加 deny パス (カンマ区切り、なければ空): ").split(",")
     extra = [e.strip() for e in extra if e.strip()]
     use_container = _ask("コンテナ定義を出力? (y/n): ", ["y", "n"]) == "y"
+    use_full_access = _ask("権限バイパス/フルアクセスを常用しますか? (y/n): ", ["y", "n"]) == "y"
+    share_docker_socket = _ask("コンテナへ Docker socket を共有しますか? (y/n): ", ["y", "n"]) == "y"
+    network_host = _ask("ホストネットワーク(host network)を使用しますか? (y/n): ", ["y", "n"]) == "y"
+    direct_push = _ask("エージェントに直接 push/deploy を行わせますか? (y/n): ", ["y", "n"]) == "y"
     return {"products": products, "level": level, "plan": plan, "stacks": stacks,
             "allowed_domains": domains, "extra_deny_paths": extra,
-            "use_container": use_container}
+            "use_container": use_container, "use_full_access": use_full_access,
+            "share_docker_socket": share_docker_socket, "network_host": network_host,
+            "direct_push": direct_push}
 
 
 def main(argv=None):
@@ -51,8 +57,10 @@ def main(argv=None):
 
     devs = redlines.check_inputs(
         profile["level"], profile["plan"],
-        use_full_access=False, share_docker_socket=False,
-        network_host=False, direct_push=False)
+        use_full_access=profile.get("use_full_access", False),
+        share_docker_socket=profile.get("share_docker_socket", False),
+        network_host=profile.get("network_host", False),
+        direct_push=profile.get("direct_push", False))
     if redlines.has_blocking(devs, override=args.allow_redline_override):
         print("レッドライン違反のため生成を中止します:")
         for d in devs:
