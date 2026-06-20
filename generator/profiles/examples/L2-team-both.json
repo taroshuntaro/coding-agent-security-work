@@ -1,0 +1,9 @@
+{
+  "products": ["claude", "codex"],
+  "level": "L2",
+  "plan": "team",
+  "stacks": ["npm"],
+  "allowed_domains": ["github.com", "objects.githubusercontent.com"],
+  "extra_deny_paths": [],
+  "use_container": true
+}
