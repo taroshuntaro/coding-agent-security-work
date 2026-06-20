@@ -69,10 +69,7 @@ def _emit(data, prefix, lines):
     for k, v in tables.items():
         # For table names in section headers, also quote if needed
         if prefix:
-            if _needs_quoting(k):
-                new_prefix = f'{prefix}."{k}"'
-            else:
-                new_prefix = f"{prefix}.{k}"
+            new_prefix = f"{prefix}.{_fmt_key(k) if _needs_quoting(k) else k}"
         else:
             new_prefix = _fmt_key(k) if _needs_quoting(k) else k
         _emit(v, new_prefix, lines)

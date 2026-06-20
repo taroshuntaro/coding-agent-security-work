@@ -35,3 +35,25 @@ class TestTomlEmitter(unittest.TestCase):
         self.assertEqual(parsed["a"], "b")
         self.assertEqual(parsed["section"]["c"], [1, 2])
         self.assertTrue(parsed["section"]["d"])
+
+    def test_quoted_key_at_top_level(self):
+        import tomllib
+        # Test that a key needing quoting at the top level is quoted
+        data = {"x": {"**/.env": "deny"}}
+        out = rt.dumps(data)
+        self.assertIn('"**/.env" = "deny"', out)
+        # Verify it parses and round-trips correctly
+        parsed = tomllib.loads(out)
+        self.assertEqual(parsed["x"]["**/.env"], "deny")
+
+    def test_quoted_key_in_nested_section(self):
+        import tomllib
+        # Test that a key needing quoting in a nested section path is escaped properly
+        data = {"permissions": {":workspace_roots": {"**/.env": "deny"}}}
+        out = rt.dumps(data)
+        # The nested key :workspace_roots should be quoted in the section header
+        self.assertIn('[permissions.":workspace_roots"]', out)
+        self.assertIn('"**/.env" = "deny"', out)
+        # Verify it parses and round-trips correctly
+        parsed = tomllib.loads(out)
+        self.assertEqual(parsed["permissions"][":workspace_roots"]["**/.env"], "deny")
