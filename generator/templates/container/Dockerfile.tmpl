@@ -1,0 +1,12 @@
+# docs/09-containers.md 9.1 に準拠。ベースイメージは digest 固定を推奨。
+FROM $base_image
+
+# 非rootユーザー
+RUN useradd --create-home --shell /bin/bash agent || true
+WORKDIR /workspace
+
+# 必要ツールのみを固定バージョンで導入する（例: ここに追記）
+# RUN ...
+
+USER agent
+# bind mount された /workspace のみを編集対象とする

@@ -1,0 +1,16 @@
+# 生成された設定の適用手順
+
+- 対象レベル: $level / プラン: $plan / 製品: $products
+
+## 適用
+- Claude Code プロジェクト設定: `claude-code/.claude/settings.json` をリポジトリへ
+- Claude Code 管理設定（team/L3+）: `claude-code/managed-settings.json` をリポジトリ外の管理パスへ
+- Codex: `codex/.codex/config.toml`、管理は `codex/requirements.toml`
+- コンテナ: `Dockerfile` / `docker-compose.yml` / `.devcontainer/`
+
+## 検証（必須）
+1. `python acceptance/selfcheck.py .` で静的検査（PASS を確認）
+2. `acceptance/checklist.md` を実環境で実施し「実拒否」を確認（docs/00 R5）
+
+## 逸脱事項
+$deviations_block
