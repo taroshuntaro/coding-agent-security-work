@@ -6,6 +6,7 @@ docs/15-acceptance-tests.md の注意: これは静的確認に過ぎない。
 
 import sys
 import json
+import tomllib
 from pathlib import Path
 
 REQUIRED_DENY = ["git push *", "sudo *"]
@@ -49,6 +50,25 @@ def _check_profile(path, msgs):
             msgs.append(f"WARN {path}: SHOULD 逸脱 ({dev.get('rule_ref')})")
 
 
+def _check_codex_config(path, msgs):
+    data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
+    if data.get("default_permissions") == ":danger-full-access":
+        msgs.append(f"FAIL {path}: default_permissions が :danger-full-access (00 R3)")
+    if data.get("approval_policy") == "never":
+        msgs.append(f"FAIL {path}: approval_policy = never (10.8)")
+    perms = data.get("permissions", {})
+    for name, prof in perms.items():
+        if not isinstance(prof, dict):
+            continue
+        if prof.get("extends") == ":danger-full-access":
+            msgs.append(f"FAIL {path}: permissions.{name} が :danger-full-access を継承 (00 R3)")
+        # workspace-write プロファイルがあるときのみ .env read deny を要求。
+        # L1 の :read-only は permissions を持たずここに来ない（docs 10.3.1: 外部境界で遮断）。
+        roots = prof.get("filesystem", {}).get(":workspace_roots", {})
+        if roots and not any(".env" in k and v == "deny" for k, v in roots.items()):
+            msgs.append(f"FAIL {path}: permissions.{name} に .env の deny がありません (00 R2)")
+
+
 def check_dir(output_dir):
     root = Path(output_dir)
     msgs = []
@@ -61,6 +81,9 @@ def check_dir(output_dir):
         _check_compose(p, msgs)
     for p in root.rglob("generation-profile.json"):
         _check_profile(p, msgs)
+    for p in root.rglob("config.toml"):
+        if p.parent.name == ".codex":
+            _check_codex_config(p, msgs)
     code = 2 if any(m.startswith("FAIL") for m in msgs) else 0
     return code, msgs
 

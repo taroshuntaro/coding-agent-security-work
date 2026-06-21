@@ -55,3 +55,72 @@ class TestSelfcheck(unittest.TestCase):
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 2)
             self.assertTrue(any("redline" in m.lower() for m in msgs))
+
+
+class TestCodexConfig(unittest.TestCase):
+    _L2 = (
+        'approval_policy = "on-request"\n'
+        'web_search = "cached"\n'
+        'default_permissions = "business-workspace"\n'
+        '[permissions.business-workspace]\n'
+        'extends = ":workspace"\n'
+        '[permissions.business-workspace.filesystem.":workspace_roots"]\n'
+        '"**/.env" = "deny"\n'
+        '".devcontainer" = "read"\n'
+    )
+
+    def test_clean_l2_config_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/.codex/config.toml", self._L2)
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)
+
+    def test_danger_full_access_default_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/.codex/config.toml",
+                   'approval_policy = "on-request"\n'
+                   'default_permissions = ":danger-full-access"\n')
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("R3" in m for m in msgs))
+
+    def test_danger_full_access_extends_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/.codex/config.toml",
+                   'approval_policy = "on-request"\n'
+                   'default_permissions = "x"\n'
+                   '[permissions.x]\n'
+                   'extends = ":danger-full-access"\n')
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("R3" in m for m in msgs))
+
+    def test_approval_never_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/.codex/config.toml",
+                   'approval_policy = "never"\n'
+                   'default_permissions = ":read-only"\n')
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("10.8" in m for m in msgs))
+
+    def test_workspace_write_missing_env_deny_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/.codex/config.toml",
+                   'default_permissions = "business-workspace"\n'
+                   '[permissions.business-workspace]\n'
+                   'extends = ":workspace"\n'
+                   '[permissions.business-workspace.filesystem.":workspace_roots"]\n'
+                   '".devcontainer" = "read"\n')
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("R2" in m for m in msgs))
+
+    def test_l1_read_only_skips_env_check(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/.codex/config.toml",
+                   'approval_policy = "on-request"\n'
+                   'web_search = "cached"\n'
+                   'default_permissions = ":read-only"\n')
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)
