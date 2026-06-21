@@ -25,10 +25,6 @@ def ask_question(q, input_fn=input, print_fn=print):
         return value
 
 
-def _answers(input_fn, print_fn):
-    return {q["key"]: ask_question(q, input_fn, print_fn) for q in questions.QUESTIONS}
-
-
 def collect_interactive(input_fn=input, print_fn=print):
     a = {}
     for q in questions.QUESTIONS:
@@ -60,7 +56,7 @@ def collect_interactive(input_fn=input, print_fn=print):
     }
 
 
-def confirm(prompt, input_fn=input, print_fn=print, default=True):
+def confirm(prompt, input_fn=input, default=True):
     suffix = " [Y/n]: " if default else " [y/N]: "
     raw = input_fn(prompt + suffix).strip().lower()
     if raw == "":

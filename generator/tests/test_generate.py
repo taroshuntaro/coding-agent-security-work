@@ -34,7 +34,7 @@ class TestAskQuestion(unittest.TestCase):
 
 class TestCollectInteractive(unittest.TestCase):
     def test_unknown_stack_warns_and_reasks(self):
-        # 製品2, level, plan, stacks(不正→正), domains, extra, container, redline*4
+        # 製品2, level, plan, stacks(不正→正), domains, extra, container, 4 redline questions
         inputs = ["y", "y", "L2", "team",
                   "npm,rust", "npm",          # stacks: 未知 rust → 再入力
                   "github.com", "",
