@@ -46,6 +46,19 @@ class TestOrchestrate(unittest.TestCase):
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 0, msgs)
 
+    def test_commentable_files_have_banner(self):
+        with tempfile.TemporaryDirectory() as d:
+            files = orchestrate.generate(self._profile(), d, [], "node:20-bookworm-slim")
+            for rel in ("codex/.codex/config.toml", "docker-compose.yml", "Dockerfile"):
+                text = Path(files[rel]).read_text(encoding="utf-8")
+                self.assertIn("自動生成: coding-agent-security", text)
+
+    def test_json_files_have_no_banner(self):
+        with tempfile.TemporaryDirectory() as d:
+            files = orchestrate.generate(self._profile(), d, [], "node:20-bookworm-slim")
+            text = Path(files["claude-code/.claude/settings.json"]).read_text(encoding="utf-8")
+            self.assertNotIn("自動生成: coding-agent-security", text)
+
     def test_redline_override_records_deviation_and_selfcheck_fails(self):
         dev = deviation.make(
             "redline", "00 R3", "bypass used", "no bypass",
