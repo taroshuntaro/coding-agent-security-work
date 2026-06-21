@@ -2,15 +2,24 @@
 
 - 対象レベル: $level / プラン: $plan / 製品: $products
 
+## このセットの使い方（2つの導入フロー）
+
+- 既存プロジェクトへ導入: 下記「適用」のとおり各ファイルを配置し、`acceptance/checklist.md` で実拒否を確認してから運用を開始する。
+- 新規プロジェクトで着工: フォルダだけ作った段階で先に本設定を配置し、ガードレール付きでエージェントを起動する。スタックが固まったら `generation-profile.json` を `--profile` に渡して再生成し、差分を反映する。
+
+## 生成された成果物
+
+$artifact_guide
+
 ## 適用
-- Claude Code プロジェクト設定: `claude-code/.claude/settings.json` をリポジトリへ
-- Claude Code 管理設定（team/L3+）: `claude-code/managed-settings.json` をリポジトリ外の管理パスへ
-- Codex: `codex/.codex/config.toml`、管理は `codex/requirements.toml`
-- コンテナ: `Dockerfile` / `docker-compose.yml` / `.devcontainer/`
+
+$apply_steps
 
 ## 検証（必須）
-1. `python acceptance/selfcheck.py .` で静的検査（PASS を確認）
+1. `python3 acceptance/selfcheck.py .` で静的検査（PASS を確認）
 2. `acceptance/checklist.md` を実環境で実施し「実拒否」を確認（docs/00 R5）
+
+> selfcheck は静的確認に過ぎません。実拒否は必ず実環境・実バージョンで確認してください。
 
 ## 逸脱事項
 $deviations_block

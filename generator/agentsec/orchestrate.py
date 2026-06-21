@@ -3,8 +3,8 @@
 import json
 from pathlib import Path
 
-from agentsec import (rules, build_claude, build_codex, render_text,
-                      profile as profile_mod)
+from agentsec import (rules, build_claude, build_codex, render_text, banner,
+                      readme, profile as profile_mod)
 
 
 def _write(out_root, rel, text):
@@ -12,6 +12,15 @@ def _write(out_root, rel, text):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")
     return str(path)
+
+
+def output_has_files(output_dir):
+    p = Path(output_dir)
+    return p.exists() and any(p.rglob("*"))
+
+
+def _write_commentable(out_root, rel, text, head):
+    return _write(out_root, rel, head + text)
 
 
 def _json(obj):
@@ -34,6 +43,7 @@ def generate(profile, output_dir, deviations, base_image):
     domains = profile["allowed_domains"]
     extra = profile["extra_deny_paths"]
     stacks_keys = profile["stacks"]
+    head = banner.banner(lvl, profile["products"])
 
     if "claude" in profile["products"]:
         files["claude-code/.claude/settings.json"] = _write(
@@ -45,31 +55,37 @@ def generate(profile, output_dir, deviations, base_image):
                 _json(build_claude.build_managed_settings(lvl, stacks_keys, domains, extra, [])))
 
     if "codex" in profile["products"]:
-        files["codex/.codex/config.toml"] = _write(
+        files["codex/.codex/config.toml"] = _write_commentable(
             output_dir, "codex/.codex/config.toml",
-            build_codex.build_config(lvl, stacks_keys, domains, extra))
+            build_codex.build_config(lvl, stacks_keys, domains, extra), head)
         if plan == "team":
-            files["codex/requirements.toml"] = _write(
+            files["codex/requirements.toml"] = _write_commentable(
                 output_dir, "codex/requirements.toml",
-                build_codex.build_requirements(lvl, domains, extra))
+                build_codex.build_requirements(lvl, domains, extra), head)
 
     if profile["use_container"]:
-        files["Dockerfile"] = _write(output_dir, "Dockerfile",
-            render_text.render("container/Dockerfile.tmpl", {"base_image": base_image}))
-        files["docker-compose.yml"] = _write(output_dir, "docker-compose.yml",
-            render_text.render("container/docker-compose.yml.tmpl", {"service_name": "dev"}))
+        files["Dockerfile"] = _write_commentable(output_dir, "Dockerfile",
+            render_text.render("container/Dockerfile.tmpl", {"base_image": base_image}), head)
+        files["docker-compose.yml"] = _write_commentable(output_dir, "docker-compose.yml",
+            render_text.render("container/docker-compose.yml.tmpl", {"service_name": "dev"}), head)
         files[".devcontainer/devcontainer.json"] = _write(
             output_dir, ".devcontainer/devcontainer.json",
             render_text.render("container/devcontainer.json.tmpl", {"service_name": "dev"}))
         files[".dockerignore"] = _write(output_dir, ".dockerignore",
             render_text.render("container/dockerignore.tmpl", {}))
 
+    artifact_keys = set(files) | {
+        "acceptance/checklist.md", "acceptance/selfcheck.py",
+        "POLICY-SHEET.md", "generation-profile.json",
+    }
     text_map = {
         "level": lvl, "plan": plan, "products": ", ".join(profile["products"]),
         "use_container": str(profile["use_container"]), "base_image": base_image,
         "deny_paths": ", ".join(rules.SENSITIVE_READ_PATHS + extra),
         "allowed_domains": ", ".join(domains),
         "deviations_block": _deviations_block(deviations),
+        "artifact_guide": readme.artifact_guide(artifact_keys),
+        "apply_steps": readme.apply_steps(artifact_keys),
     }
     files["acceptance/checklist.md"] = _write(output_dir, "acceptance/checklist.md",
         render_text.render("acceptance/checklist.md.tmpl", text_map))

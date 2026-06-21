@@ -27,6 +27,13 @@ STACKS = {
     },
 }
 
+KNOWN = frozenset(STACKS)
+
+
+def unknown_keys(keys):
+    """keys のうち STACKS に無いものを入力順で返す。"""
+    return [k for k in keys if k not in STACKS]
+
 
 def commands_for(stack_keys):
     allow, ask = set(), set()
