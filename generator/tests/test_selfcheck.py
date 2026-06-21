@@ -196,3 +196,54 @@ class TestCodexRequirements(unittest.TestCase):
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 2)
             self.assertTrue(any("10.3.2" in m for m in msgs))
+
+
+def _profile_json(**profile):
+    return json.dumps({"profile": profile})
+
+
+class TestCompleteness(unittest.TestCase):
+    def test_missing_managed_for_team_l3_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "generation-profile.json", _profile_json(
+                products=["claude"], level="L3", plan="team", use_container=False))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("managed-settings.json" in m and "生成漏れ" in m for m in msgs))
+
+    def test_missing_requirements_for_codex_team_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "generation-profile.json", _profile_json(
+                products=["codex"], level="L2", plan="team", use_container=False))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("requirements.toml" in m and "生成漏れ" in m for m in msgs))
+
+    def test_missing_dockerfile_when_container_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "generation-profile.json", _profile_json(
+                products=["claude"], level="L2", plan="personal", use_container=True))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("Dockerfile" in m and "生成漏れ" in m for m in msgs))
+
+    def test_no_profile_skips_completeness(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "claude-code/.claude/settings.json", json.dumps({
+                "permissions": {"deny": ["Read(./.env)", "Bash(git push *)", "Bash(sudo *)"]},
+                "sandbox": {"autoAllowBashIfSandboxed": False}}))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)
+
+    def test_complete_personal_output_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "claude-code/.claude/settings.json", json.dumps({
+                "permissions": {"deny": ["Read(./.env)", "Bash(git push *)", "Bash(sudo *)"]},
+                "sandbox": {"autoAllowBashIfSandboxed": False}}))
+            for rel in ("acceptance/checklist.md", "acceptance/selfcheck.py",
+                        "POLICY-SHEET.md", "README.md"):
+                _write(d, rel, "x")
+            _write(d, "generation-profile.json", _profile_json(
+                products=["claude"], level="L2", plan="personal", use_container=False))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)

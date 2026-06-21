@@ -98,6 +98,36 @@ def _check_codex_requirements(path, msgs):
         msgs.append(f"FAIL {path}: allowed_web_search_modes に live が含まれます (10.3.2)")
 
 
+def _expected_files(profile):
+    products = profile.get("products", [])
+    plan = profile.get("plan")
+    level = profile.get("level")
+    expected = ["acceptance/checklist.md", "acceptance/selfcheck.py",
+                "POLICY-SHEET.md", "README.md", "generation-profile.json"]
+    if "claude" in products:
+        expected.append("claude-code/.claude/settings.json")
+        if plan == "team" and level in ("L3", "L4"):
+            expected.append("claude-code/managed-settings.json")
+    if "codex" in products:
+        expected.append("codex/.codex/config.toml")
+        if plan == "team":
+            expected.append("codex/requirements.toml")
+    if profile.get("use_container"):
+        expected += ["Dockerfile", "docker-compose.yml",
+                     ".devcontainer/devcontainer.json", ".dockerignore"]
+    return expected
+
+
+def _check_completeness(root, msgs):
+    prof_path = root / "generation-profile.json"
+    if not prof_path.exists():
+        return
+    profile = json.loads(prof_path.read_text(encoding="utf-8")).get("profile", {})
+    for rel in _expected_files(profile):
+        if not (root / rel).exists():
+            msgs.append(f"FAIL {root}: 生成漏れ — 期待ファイル '{rel}' がありません")
+
+
 def check_dir(output_dir):
     root = Path(output_dir)
     msgs = []
@@ -116,6 +146,7 @@ def check_dir(output_dir):
     for p in root.rglob("requirements.toml"):
         if p.parent.name == "codex":
             _check_codex_requirements(p, msgs)
+    _check_completeness(root, msgs)
     code = 2 if any(m.startswith("FAIL") for m in msgs) else 0
     return code, msgs
 
