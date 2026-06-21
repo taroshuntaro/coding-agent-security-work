@@ -124,3 +124,75 @@ class TestCodexConfig(unittest.TestCase):
                    'default_permissions = ":read-only"\n')
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 0, msgs)
+
+
+class TestCodexRequirements(unittest.TestCase):
+    _CLEAN = (
+        'allowed_approval_policies = ["untrusted", "on-request"]\n'
+        'allowed_web_search_modes = ["cached"]\n'
+        '[allowed_permission_profiles]\n'
+        '":read-only" = true\n'
+        'org-workspace = true\n'
+        '[permissions.filesystem]\n'
+        'deny_read = ["**/.env", "**/secrets/**", "~/.ssh", "~/.aws"]\n'
+        '[rules]\n'
+        'prefix_rules = [\n'
+        '  { pattern = [{ token = "git" }, { token = "push" }], decision = "forbidden", justification = "x" },\n'
+        '  { pattern = [{ token = "sudo" }], decision = "forbidden", justification = "y" },\n'
+        ']\n'
+    )
+
+    def test_clean_requirements_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/requirements.toml", self._CLEAN)
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)
+
+    def test_danger_full_access_allowed_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/requirements.toml",
+                   'allowed_web_search_modes = ["cached"]\n'
+                   '[allowed_permission_profiles]\n'
+                   '":danger-full-access" = true\n'
+                   '[permissions.filesystem]\n'
+                   'deny_read = ["**/.env", "~/.ssh"]\n'
+                   '[rules]\n'
+                   'prefix_rules = [\n'
+                   '  { pattern = [{ token = "git" }, { token = "push" }], decision = "forbidden", justification = "x" },\n'
+                   '  { pattern = [{ token = "sudo" }], decision = "forbidden", justification = "y" },\n'
+                   ']\n')
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("R3" in m for m in msgs))
+
+    def test_missing_env_deny_read_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/requirements.toml",
+                   self._CLEAN.replace('"**/.env", ', ""))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("R2" in m for m in msgs))
+
+    def test_missing_git_push_forbidden_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/requirements.toml",
+                   'allowed_web_search_modes = ["cached"]\n'
+                   '[allowed_permission_profiles]\n'
+                   'org-workspace = true\n'
+                   '[permissions.filesystem]\n'
+                   'deny_read = ["**/.env", "~/.ssh"]\n'
+                   '[rules]\n'
+                   'prefix_rules = [\n'
+                   '  { pattern = [{ token = "sudo" }], decision = "forbidden", justification = "y" },\n'
+                   ']\n')
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("R4" in m for m in msgs))
+
+    def test_live_search_mode_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/requirements.toml",
+                   self._CLEAN.replace('["cached"]', '["cached", "live"]'))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("10.3.2" in m for m in msgs))

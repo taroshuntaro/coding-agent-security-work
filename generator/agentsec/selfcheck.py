@@ -69,6 +69,35 @@ def _check_codex_config(path, msgs):
             msgs.append(f"FAIL {path}: permissions.{name} に .env の deny がありません (00 R2)")
 
 
+def _has_forbidden(prefix_rules, tokens):
+    for rule in prefix_rules:
+        if not isinstance(rule, dict) or rule.get("decision") != "forbidden":
+            continue
+        pat = [t.get("token") for t in rule.get("pattern", [])
+               if isinstance(t, dict) and "token" in t]
+        if all(tok in pat for tok in tokens):
+            return True
+    return False
+
+
+def _check_codex_requirements(path, msgs):
+    data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
+    if data.get("allowed_permission_profiles", {}).get(":danger-full-access"):
+        msgs.append(f"FAIL {path}: allowed_permission_profiles に :danger-full-access (00 R3)")
+    deny_read = data.get("permissions", {}).get("filesystem", {}).get("deny_read", [])
+    if not any(".env" in d for d in deny_read):
+        msgs.append(f"FAIL {path}: deny_read に .env がありません (00 R2)")
+    if not any((".ssh" in d or ".aws" in d or ".kube" in d) for d in deny_read):
+        msgs.append(f"FAIL {path}: deny_read に資格情報ディレクトリがありません (00 R2)")
+    prefix_rules = data.get("rules", {}).get("prefix_rules", [])
+    if not _has_forbidden(prefix_rules, ["git", "push"]):
+        msgs.append(f"FAIL {path}: prefix_rules に git push の forbidden がありません (00 R4)")
+    if not _has_forbidden(prefix_rules, ["sudo"]):
+        msgs.append(f"FAIL {path}: prefix_rules に sudo の forbidden がありません (00 R4)")
+    if "live" in data.get("allowed_web_search_modes", []):
+        msgs.append(f"FAIL {path}: allowed_web_search_modes に live が含まれます (10.3.2)")
+
+
 def check_dir(output_dir):
     root = Path(output_dir)
     msgs = []
@@ -84,6 +113,8 @@ def check_dir(output_dir):
     for p in root.rglob("config.toml"):
         if p.parent.name == ".codex":
             _check_codex_config(p, msgs)
+    for p in root.rglob("requirements.toml"):
+        _check_codex_requirements(p, msgs)
     code = 2 if any(m.startswith("FAIL") for m in msgs) else 0
     return code, msgs
 
