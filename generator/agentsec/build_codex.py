@@ -24,6 +24,8 @@ def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
     workspace_roots[".devcontainer"] = "read"
 
     network = {"enabled": bool(allowed_domains)}
+    if allowed_domains:
+        network["domains"] = {d: "allow" for d in allowed_domains}
     config = {
         "approval_policy": "on-request",
         "web_search": prof["web_search"],
@@ -42,18 +44,18 @@ def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
             }
         },
     }
-    if allowed_domains:
-        config["permissions"]["business-workspace"]["network"] = {
-            "enabled": True,
-            "domains": {d: "allow" for d in allowed_domains},
-        }
     return header + render_toml.dumps(config)
 
 
 def build_requirements(level, allowed_domains, extra_deny_paths):
     prof = rules.level_profile(level)
+    org_network = {"enabled": bool(allowed_domains)}
+    if allowed_domains:
+        org_network["domains"] = {d: "allow" for d in allowed_domains}
     req = {
         "allowed_approval_policies": ["untrusted", "on-request"],
+        # disabled は常に許可されるため、L4 の config(web_search=disabled) と
+        # この allowed_web_search_modes(=["cached"]) は矛盾しない（docs 10.3.2/10.5）。
         "allowed_web_search_modes": [prof["web_search"]] if prof["web_search"] != "disabled" else ["cached"],
         "allow_remote_control": False,
         "allow_appshots": False,
@@ -68,7 +70,7 @@ def build_requirements(level, allowed_domains, extra_deny_paths):
                 "extends": ":workspace",
                 "description": "Managed workspace access with sensitive files denied",
                 "filesystem": {":root": "deny", ":minimal": "read", "glob_scan_max_depth": 4},
-                "network": {"enabled": bool(allowed_domains)},
+                "network": org_network,
             },
         },
         "rules": {
@@ -82,7 +84,4 @@ def build_requirements(level, allowed_domains, extra_deny_paths):
             ]
         },
     }
-    if allowed_domains:
-        req["permissions"]["org-workspace"]["network"] = {
-            "enabled": True, "domains": {d: "allow" for d in allowed_domains}}
     return "# 組織管理 requirements.toml（team プラン用）\n" + render_toml.dumps(req)

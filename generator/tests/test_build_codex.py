@@ -42,3 +42,23 @@ class TestBuildCodex(unittest.TestCase):
         toml = build_codex.build_requirements("L2", ["github.com"], [])
         parsed = tomllib.loads(toml)
         self.assertEqual(parsed["permissions"]["org-workspace"]["extends"], ":workspace")
+
+    def test_config_network_with_domains(self):
+        parsed = tomllib.loads(build_codex.build_config("L2", ["npm"], ["github.com"], []))
+        net = parsed["permissions"]["business-workspace"]["network"]
+        self.assertEqual(net, {"enabled": True, "domains": {"github.com": "allow"}})
+
+    def test_config_network_without_domains(self):
+        parsed = tomllib.loads(build_codex.build_config("L2", ["npm"], [], []))
+        net = parsed["permissions"]["business-workspace"]["network"]
+        self.assertEqual(net, {"enabled": False})
+
+    def test_requirements_network_with_domains(self):
+        parsed = tomllib.loads(build_codex.build_requirements("L2", ["github.com"], []))
+        net = parsed["permissions"]["org-workspace"]["network"]
+        self.assertEqual(net, {"enabled": True, "domains": {"github.com": "allow"}})
+
+    def test_requirements_network_without_domains(self):
+        parsed = tomllib.loads(build_codex.build_requirements("L2", [], []))
+        net = parsed["permissions"]["org-workspace"]["network"]
+        self.assertEqual(net, {"enabled": False})

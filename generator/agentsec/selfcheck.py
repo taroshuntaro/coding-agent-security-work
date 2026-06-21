@@ -6,6 +6,7 @@ docs/15-acceptance-tests.md の注意: これは静的確認に過ぎない。
 
 import sys
 import json
+import tomllib
 from pathlib import Path
 
 REQUIRED_DENY = ["git push *", "sudo *"]
@@ -49,6 +50,84 @@ def _check_profile(path, msgs):
             msgs.append(f"WARN {path}: SHOULD 逸脱 ({dev.get('rule_ref')})")
 
 
+def _check_codex_config(path, msgs):
+    data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
+    if data.get("default_permissions") == ":danger-full-access":
+        msgs.append(f"FAIL {path}: default_permissions が :danger-full-access (00 R3)")
+    if data.get("approval_policy") == "never":
+        msgs.append(f"FAIL {path}: approval_policy = never (10.8)")
+    perms = data.get("permissions", {})
+    for name, prof in perms.items():
+        if not isinstance(prof, dict):
+            continue
+        if prof.get("extends") == ":danger-full-access":
+            msgs.append(f"FAIL {path}: permissions.{name} が :danger-full-access を継承 (00 R3)")
+        # workspace-write プロファイルがあるときのみ .env read deny を要求。
+        # L1 の :read-only は permissions を持たずここに来ない（docs 10.3.1: 外部境界で遮断）。
+        roots = prof.get("filesystem", {}).get(":workspace_roots", {})
+        if roots and not any(".env" in k and v == "deny" for k, v in roots.items()):
+            msgs.append(f"FAIL {path}: permissions.{name} に .env の deny がありません (00 R2)")
+
+
+def _has_forbidden(prefix_rules, tokens):
+    for rule in prefix_rules:
+        if not isinstance(rule, dict) or rule.get("decision") != "forbidden":
+            continue
+        pat = [t.get("token") for t in rule.get("pattern", [])
+               if isinstance(t, dict) and "token" in t]
+        if all(tok in pat for tok in tokens):
+            return True
+    return False
+
+
+def _check_codex_requirements(path, msgs):
+    data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
+    if data.get("allowed_permission_profiles", {}).get(":danger-full-access"):
+        msgs.append(f"FAIL {path}: allowed_permission_profiles に :danger-full-access (00 R3)")
+    deny_read = data.get("permissions", {}).get("filesystem", {}).get("deny_read", [])
+    if not any(".env" in d for d in deny_read):
+        msgs.append(f"FAIL {path}: deny_read に .env がありません (00 R2)")
+    if not any((".ssh" in d or ".aws" in d or ".kube" in d) for d in deny_read):
+        msgs.append(f"FAIL {path}: deny_read に資格情報ディレクトリがありません (00 R2)")
+    prefix_rules = data.get("rules", {}).get("prefix_rules", [])
+    if not _has_forbidden(prefix_rules, ["git", "push"]):
+        msgs.append(f"FAIL {path}: prefix_rules に git push の forbidden がありません (00 R4)")
+    if not _has_forbidden(prefix_rules, ["sudo"]):
+        msgs.append(f"FAIL {path}: prefix_rules に sudo の forbidden がありません (00 R4)")
+    if "live" in data.get("allowed_web_search_modes", []):
+        msgs.append(f"FAIL {path}: allowed_web_search_modes に live が含まれます (10.3.2)")
+
+
+def _expected_files(profile):
+    products = profile.get("products", [])
+    plan = profile.get("plan")
+    level = profile.get("level")
+    expected = ["acceptance/checklist.md", "acceptance/selfcheck.py",
+                "POLICY-SHEET.md", "README.md", "generation-profile.json"]
+    if "claude" in products:
+        expected.append("claude-code/.claude/settings.json")
+        if plan == "team" and level in ("L3", "L4"):
+            expected.append("claude-code/managed-settings.json")
+    if "codex" in products:
+        expected.append("codex/.codex/config.toml")
+        if plan == "team":
+            expected.append("codex/requirements.toml")
+    if profile.get("use_container"):
+        expected += ["Dockerfile", "docker-compose.yml",
+                     ".devcontainer/devcontainer.json", ".dockerignore"]
+    return expected
+
+
+def _check_completeness(root, msgs):
+    prof_path = root / "generation-profile.json"
+    if not prof_path.exists():
+        return
+    profile = json.loads(prof_path.read_text(encoding="utf-8")).get("profile", {})
+    for rel in _expected_files(profile):
+        if not (root / rel).exists():
+            msgs.append(f"FAIL {root}: 生成漏れ — 期待ファイル '{rel}' がありません")
+
+
 def check_dir(output_dir):
     root = Path(output_dir)
     msgs = []
@@ -61,6 +140,13 @@ def check_dir(output_dir):
         _check_compose(p, msgs)
     for p in root.rglob("generation-profile.json"):
         _check_profile(p, msgs)
+    for p in root.rglob("config.toml"):
+        if p.parent.name == ".codex":
+            _check_codex_config(p, msgs)
+    for p in root.rglob("requirements.toml"):
+        if p.parent.name == "codex":
+            _check_codex_requirements(p, msgs)
+    _check_completeness(root, msgs)
     code = 2 if any(m.startswith("FAIL") for m in msgs) else 0
     return code, msgs
 
