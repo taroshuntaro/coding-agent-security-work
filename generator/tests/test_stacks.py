@@ -17,3 +17,12 @@ class TestStacks(unittest.TestCase):
     def test_unknown_stack_raises(self):
         with self.assertRaises(ValueError):
             stacks.commands_for(["cobol"])
+
+    def test_known_contains_all_stack_keys(self):
+        self.assertEqual(stacks.KNOWN, frozenset(stacks.STACKS))
+
+    def test_unknown_keys_returns_only_unknown_in_order(self):
+        self.assertEqual(stacks.unknown_keys(["npm", "rust", "pip", "ruby"]), ["rust", "ruby"])
+
+    def test_unknown_keys_empty_when_all_known(self):
+        self.assertEqual(stacks.unknown_keys(["npm", "pip"]), [])
