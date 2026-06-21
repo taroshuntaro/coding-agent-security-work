@@ -27,7 +27,7 @@ QUESTIONS = [
      "help_line": "個人契約(personal)か、チーム/ビジネス契約(team)か。",
      "detail": ("team かつ L3+ のときのみ組織強制設定"
                 "（managed-settings.json / requirements.toml）を生成します。")},
-    {"key": "stacks", "type": "csv", "default": "",
+    {"key": "stacks", "type": "csv", "default": [],
      "prompt": "ビルド/言語スタック（カンマ区切り、無ければ空 Enter）",
      "help_line": f"対象プロジェクトで使うものを選びます。対応: {_STACK_LIST}。",
      "detail": ("ここで挙げたスタックの test/build 等を許可コマンドに追加します。"
@@ -39,7 +39,7 @@ QUESTIONS = [
      "detail": ("空 Enter で既定 "
                 f"({', '.join(rules.DEFAULT_ALLOWED_DOMAINS)}) を採用します。"
                 "ここに無いドメインへの接続は遮断されます。")},
-    {"key": "extra_deny_paths", "type": "csv", "default": "",
+    {"key": "extra_deny_paths", "type": "csv", "default": [],
      "prompt": "追加で読み取り禁止にするパス（カンマ区切り、無ければ空 Enter）",
      "help_line": "既定の .env / secrets に加えて読み取りを禁止したいパス。",
      "detail": "例: **/keys/**, ./private/**。空 Enter なら既定の機密パスのみを禁止します。"},
@@ -73,9 +73,7 @@ QUESTIONS = [
 def _default_display(q):
     if q["type"] == "csv":
         d = q["default"]
-        if isinstance(d, list):
-            return ", ".join(d) if d else "なし"
-        return "なし"
+        return ", ".join(d) if d else "なし"
     return q["default"]
 
 
@@ -105,6 +103,5 @@ def resolve_answer(q, raw):
 
     # csv
     if raw == "":
-        d = q["default"]
-        return ("ok", list(d) if isinstance(d, list) else [])
+        return ("ok", list(q["default"]))
     return ("ok", [s.strip() for s in raw.split(",") if s.strip()])

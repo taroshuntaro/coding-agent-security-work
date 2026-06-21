@@ -4,7 +4,9 @@ from agentsec import questions, rules
 
 class TestQuestions(unittest.TestCase):
     def _q(self, key):
-        return next(q for q in questions.QUESTIONS if q["key"] == key)
+        q = next((q for q in questions.QUESTIONS if q["key"] == key), None)
+        self.assertIsNotNone(q, f"no question with key={key!r}")
+        return q
 
     def test_every_question_has_help_and_detail(self):
         for q in questions.QUESTIONS:
@@ -51,3 +53,13 @@ class TestQuestions(unittest.TestCase):
         self.assertEqual(
             questions.resolve_answer(self._q("allowed_domains"), ""),
             ("ok", list(rules.DEFAULT_ALLOWED_DOMAINS)))
+
+    def test_resolve_csv_drops_empty_segments(self):
+        self.assertEqual(
+            questions.resolve_answer(self._q("stacks"), "npm,,pip"),
+            ("ok", ["npm", "pip"]))
+
+    def test_resolve_invalid_yesno_returns_error(self):
+        status, msg = questions.resolve_answer(self._q("use_full_access"), "x")
+        self.assertEqual(status, "error")
+        self.assertIn("y", msg)
