@@ -35,3 +35,8 @@ class TestPlacementGuide(unittest.TestCase):
     def test_managed_row_absent_without_managed_files(self):
         out = readme.placement_guide({"claude-code/.claude/settings.json"})
         self.assertNotIn("OS 管理パス", out)
+
+    def test_monorepo_note_present_for_local_layer(self):
+        out = readme.placement_guide({"claude-code/.claude/settings.json"})
+        self.assertIn("モノレポ", out)
+        self.assertIn("共通", out)
