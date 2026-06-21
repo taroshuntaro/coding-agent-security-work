@@ -40,4 +40,6 @@ cd generator && python3 -m unittest discover -s tests
 # 生成→セルフチェックのスモーク
 python3 generate.py --profile profiles/examples/L2-team-both.json --output /tmp/gen-smoke
 python3 /tmp/gen-smoke/acceptance/selfcheck.py /tmp/gen-smoke   # exit 0 を確認
+# 対話生成で対象プロジェクトを自動検出（カレント以外を見る場合）
+python3 generate.py --target-dir /path/to/project --output /tmp/gen-detect
 ```

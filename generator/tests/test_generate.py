@@ -155,3 +155,32 @@ class TestBaseImageResolution(unittest.TestCase):
             self.assertEqual(rc, 0)
             dockerfile = (Path(d) / "out" / "Dockerfile").read_text(encoding="utf-8")
             self.assertIn("golang:1.22-bookworm", dockerfile)
+
+
+class TestTargetDirEndToEnd(unittest.TestCase):
+    def test_target_dir_detection_drives_generation(self):
+        with tempfile.TemporaryDirectory() as d:
+            proj = Path(d) / "proj"
+            proj.mkdir()
+            (proj / "go.mod").write_text("", encoding="utf-8")
+            out = Path(d) / "out"
+            # main は対話時 input() を直接使い注入できないため、検出→collect→
+            # orchestrate を直接呼んで end-to-end を検証する（--profile 経路の
+            # base-image 再現は Task 5 の test_profile_base_image_used_on_regen が担保）。
+            # claude のみ, L2, personal, [検出 go 採用=空Enter],
+            # domains, extra, container=y, 4 redline, base-image 採用=空Enter
+            inputs = ["y", "n", "L2", "personal",
+                      "",
+                      "github.com", "",
+                      "y", "n", "n", "n", "n",
+                      ""]
+            _, pr = sink()
+            profile = generate.collect_interactive(scripted(inputs), pr,
+                                                   target_dir=str(proj))
+            self.assertEqual(profile["stacks"], ["go"])
+            self.assertEqual(profile["base_image"], "golang:1.22-bookworm")
+            generate.orchestrate.generate(profile, str(out), [], profile["base_image"])
+            dockerfile = (out / "Dockerfile").read_text(encoding="utf-8")
+            self.assertIn("golang:1.22-bookworm", dockerfile)
+            self.assertIn("Bash(go test *)",
+                          (out / "claude-code/.claude/settings.json").read_text(encoding="utf-8"))
