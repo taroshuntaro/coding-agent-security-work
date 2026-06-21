@@ -59,6 +59,21 @@ class TestOrchestrate(unittest.TestCase):
             text = Path(files["claude-code/.claude/settings.json"]).read_text(encoding="utf-8")
             self.assertNotIn("自動生成: coding-agent-security", text)
 
+    def test_readme_lists_generated_artifacts_and_uses_python3(self):
+        with tempfile.TemporaryDirectory() as d:
+            files = orchestrate.generate(self._profile(), d, [], "node:20-bookworm-slim")
+            text = Path(files["README.md"]).read_text(encoding="utf-8")
+            self.assertIn("config.toml", text)
+            self.assertIn("python3 acceptance/selfcheck.py", text)
+
+    def test_readme_omits_managed_for_personal_plan(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = self._profile()
+            p["plan"] = "personal"
+            files = orchestrate.generate(p, d, [], "node:20-bookworm-slim")
+            text = Path(files["README.md"]).read_text(encoding="utf-8")
+            self.assertNotIn("managed-settings.json", text)
+
     def test_redline_override_records_deviation_and_selfcheck_fails(self):
         dev = deviation.make(
             "redline", "00 R3", "bypass used", "no bypass",

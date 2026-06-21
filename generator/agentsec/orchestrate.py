@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from agentsec import (rules, build_claude, build_codex, render_text, banner,
-                      profile as profile_mod)
+                      readme, profile as profile_mod)
 
 
 def _write(out_root, rel, text):
@@ -69,12 +69,18 @@ def generate(profile, output_dir, deviations, base_image):
         files[".dockerignore"] = _write(output_dir, ".dockerignore",
             render_text.render("container/dockerignore.tmpl", {}))
 
+    artifact_keys = set(files) | {
+        "acceptance/checklist.md", "acceptance/selfcheck.py",
+        "POLICY-SHEET.md", "generation-profile.json",
+    }
     text_map = {
         "level": lvl, "plan": plan, "products": ", ".join(profile["products"]),
         "use_container": str(profile["use_container"]), "base_image": base_image,
         "deny_paths": ", ".join(rules.SENSITIVE_READ_PATHS + extra),
         "allowed_domains": ", ".join(domains),
         "deviations_block": _deviations_block(deviations),
+        "artifact_guide": readme.artifact_guide(artifact_keys),
+        "apply_steps": readme.apply_steps(artifact_keys),
     }
     files["acceptance/checklist.md"] = _write(output_dir, "acceptance/checklist.md",
         render_text.render("acceptance/checklist.md.tmpl", text_map))
