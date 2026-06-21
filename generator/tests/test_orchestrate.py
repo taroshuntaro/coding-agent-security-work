@@ -98,6 +98,18 @@ class TestOrchestrate(unittest.TestCase):
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 2, msgs)
 
+    def test_readme_includes_placement_guide(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as d:
+            profile = {"products": ["claude"], "level": "L3", "plan": "team",
+                       "stacks": ["npm"], "allowed_domains": ["github.com"],
+                       "extra_deny_paths": [], "use_container": False}
+            orchestrate.generate(profile, d, [], "node:20-bookworm-slim")
+            readme_text = (Path(d) / "README.md").read_text(encoding="utf-8")
+            self.assertIn("配置と優先順位", readme_text)
+            self.assertIn("R6", readme_text)
+
     def test_output_has_files_false_for_empty(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertFalse(orchestrate.output_has_files(d))
