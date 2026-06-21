@@ -77,5 +77,27 @@ class TestDetectConsistency(unittest.TestCase):
             self.assertIn(key, stacks.KNOWN)
 
 
+class TestBaseImageInference(unittest.TestCase):
+    def test_single_known_stack_infers_image(self):
+        self.assertEqual(detect.base_image_for(["pip"]), "python:3.12-slim-bookworm")
+        self.assertEqual(detect.base_image_for(["npm"]), "node:20-bookworm-slim")
+
+    def test_multiple_stacks_returns_none(self):
+        self.assertIsNone(detect.base_image_for(["npm", "pip"]))
+
+    def test_empty_returns_none(self):
+        self.assertIsNone(detect.base_image_for([]))
+
+    def test_unknown_stack_returns_none(self):
+        self.assertIsNone(detect.base_image_for(["rust"]))
+
+    def test_default_base_image_matches_cli_default(self):
+        self.assertEqual(detect.DEFAULT_BASE_IMAGE, "node:20-bookworm-slim")
+
+    def test_base_image_keys_are_known_stacks(self):
+        for key in detect.BASE_IMAGES:
+            self.assertIn(key, stacks.KNOWN)
+
+
 if __name__ == "__main__":
     unittest.main()

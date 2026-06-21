@@ -34,6 +34,26 @@ UNSUPPORTED_MARKERS = {
     "composer.json": "php",
 }
 
+DEFAULT_BASE_IMAGE = "node:20-bookworm-slim"
+
+# 既知スタックキー → 推奨 base-image（単一スタック検出時のみ使う）
+BASE_IMAGES = {
+    "npm": "node:20-bookworm-slim",
+    "pip": "python:3.12-slim-bookworm",
+    "go": "golang:1.22-bookworm",
+    "maven": "eclipse-temurin:21-jdk",
+    "gradle": "eclipse-temurin:21-jdk",
+    "dotnet": "mcr.microsoft.com/dotnet/sdk:8.0",
+}
+
+
+def base_image_for(stack_keys):
+    """既知スタックがちょうど1つのときその base-image を返す。それ以外は None。"""
+    if len(stack_keys) != 1:
+        return None
+    return BASE_IMAGES.get(stack_keys[0])
+
+
 # 走査時に降りない依存/VCS/成果物ディレクトリ（誤検出と無駄走査を防ぐ）
 IGNORE_DIRS = {
     ".git", "node_modules", "vendor", ".venv", "venv", "__pycache__",
