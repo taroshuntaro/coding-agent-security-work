@@ -39,7 +39,8 @@ class TestCollectInteractive(unittest.TestCase):
             inputs = ["y", "y", "L2", "team",
                       "npm,rust", "npm",          # stacks: 未知 rust → 再入力
                       "github.com", "",
-                      "y", "n", "n", "n", "n"]
+                      "y", "n", "n", "n", "n",
+                      ""]                          # 推定 base-image を採用
             out, pr = sink()
             profile = generate.collect_interactive(scripted(inputs), pr, target_dir=d)
             self.assertEqual(profile["stacks"], ["npm"])
@@ -112,3 +113,45 @@ class TestResolveStacksInteractive(unittest.TestCase):
             # 検出なし → 未知 rust で再質問 → npm
             chosen = generate.resolve_stacks_interactive(d, scripted(["npm,rust", "npm"]), pr)
             self.assertEqual(chosen, ["npm"])
+
+
+class TestBaseImageResolution(unittest.TestCase):
+    def test_single_stack_inferred_image_confirmed(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "go.mod").write_text("", encoding="utf-8")
+            out, pr = sink()
+            # 製品2, level, plan, [stacks: 検出 go を確認=空Enter],
+            # domains, extra, container=y, 4 redline, base-image 確認=空Enter
+            inputs = ["y", "y", "L2", "team",
+                      "",                         # 検出 go を採用
+                      "github.com", "",
+                      "y", "n", "n", "n", "n",
+                      ""]                          # 推定 base-image を採用
+            profile = generate.collect_interactive(scripted(inputs), pr, target_dir=d)
+            self.assertEqual(profile["stacks"], ["go"])
+            self.assertEqual(profile["base_image"], "golang:1.22-bookworm")
+
+    def test_no_container_uses_default_without_prompt(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "go.mod").write_text("", encoding="utf-8")
+            out, pr = sink()
+            # container=n のときは base-image を問わない（余分な入力なし）
+            inputs = ["y", "y", "L2", "team",
+                      "",                         # 検出 go を採用
+                      "github.com", "",
+                      "n", "n", "n", "n", "n"]    # container=n + 4 redline
+            profile = generate.collect_interactive(scripted(inputs), pr, target_dir=d)
+            self.assertEqual(profile["base_image"], detect.DEFAULT_BASE_IMAGE)
+
+    def test_profile_base_image_used_on_regen(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = {"products": ["claude"], "level": "L2", "plan": "personal",
+                   "stacks": ["go"], "allowed_domains": ["github.com"],
+                   "extra_deny_paths": [], "use_container": True,
+                   "base_image": "golang:1.22-bookworm"}
+            (Path(d) / "in.json").write_text(json.dumps(src), encoding="utf-8")
+            rc = generate.main(["--profile", str(Path(d) / "in.json"),
+                                "--output", str(Path(d) / "out")])
+            self.assertEqual(rc, 0)
+            dockerfile = (Path(d) / "out" / "Dockerfile").read_text(encoding="utf-8")
+            self.assertIn("golang:1.22-bookworm", dockerfile)

@@ -64,7 +64,21 @@ def resolve_stacks_interactive(target_dir, input_fn=input, print_fn=print):
     return _manual_stacks(input_fn, print_fn)
 
 
-def collect_interactive(input_fn=input, print_fn=print, target_dir="."):
+def _resolve_base_image(stack_keys, use_container, override, input_fn, print_fn):
+    if override:
+        return override
+    if not use_container:
+        return detect.DEFAULT_BASE_IMAGE
+    inferred = detect.base_image_for(stack_keys)
+    if inferred:
+        print_fn(f"  推奨ベースイメージ: {inferred}")
+        if confirm("これを使いますか", input_fn, default=True):
+            return inferred
+    return detect.DEFAULT_BASE_IMAGE
+
+
+def collect_interactive(input_fn=input, print_fn=print, target_dir=".",
+                        base_image_override=None):
     a = {}
     for q in questions.QUESTIONS:
         if q["key"] == "stacks":
@@ -77,6 +91,8 @@ def collect_interactive(input_fn=input, print_fn=print, target_dir="."):
         products.append("claude")
     if a["include_codex"]:
         products.append("codex")
+    base_image = _resolve_base_image(
+        a["stacks"], a["use_container"], base_image_override, input_fn, print_fn)
     return {
         "products": products, "level": a["level"], "plan": a["plan"],
         "stacks": a["stacks"], "allowed_domains": a["allowed_domains"],
@@ -84,6 +100,7 @@ def collect_interactive(input_fn=input, print_fn=print, target_dir="."):
         "use_full_access": a["use_full_access"],
         "share_docker_socket": a["share_docker_socket"],
         "network_host": a["network_host"], "direct_push": a["direct_push"],
+        "base_image": base_image,
     }
 
 
@@ -91,7 +108,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile")
     parser.add_argument("--output", default="./generated")
-    parser.add_argument("--base-image", default="node:20-bookworm-slim")
+    parser.add_argument("--base-image", default=None)
     parser.add_argument("--allow-redline-override", action="store_true")
     parser.add_argument("--approver", default="")
     parser.add_argument("--save-profile")
@@ -102,7 +119,8 @@ def main(argv=None):
     if args.profile:
         profile = profile_mod.load(args.profile)
     else:
-        profile = collect_interactive(target_dir=args.target_dir)
+        profile = collect_interactive(target_dir=args.target_dir,
+                                      base_image_override=args.base_image)
         print(summary.format_summary(profile))
         if not confirm("この内容で生成しますか"):
             print("中止しました。")
@@ -141,7 +159,9 @@ def main(argv=None):
         d["approver"] = args.approver
         d["date"] = date.today().isoformat()
 
-    files = orchestrate.generate(profile, args.output, devs, args.base_image)
+    base_image = (args.base_image or profile.get("base_image")
+                  or detect.DEFAULT_BASE_IMAGE)
+    files = orchestrate.generate(profile, args.output, devs, base_image)
     print(f"{len(files)} 件を {args.output} に生成しました。")
     print("検証: python3 acceptance/selfcheck.py", args.output)
     return 0
