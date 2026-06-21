@@ -41,3 +41,22 @@ class TestProfile(unittest.TestCase):
             self.assertIn("generated_at", rec)
             self.assertEqual(len(rec["files"]["settings.json"]), 64)  # sha256 hex
             self.assertIn("product_versions", rec)
+
+    def test_validate_accepts_optional_base_image(self):
+        p = self._valid()
+        p["base_image"] = "python:3.12-slim-bookworm"
+        profile.validate(p)  # raises nothing
+
+    def test_validate_rejects_non_string_base_image(self):
+        p = self._valid()
+        p["base_image"] = 123
+        with self.assertRaises(ValueError):
+            profile.validate(p)
+
+    def test_base_image_roundtrips(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "p.json")
+            p = self._valid()
+            p["base_image"] = "golang:1.22-bookworm"
+            profile.save(path, p)
+            self.assertEqual(profile.load(path)["base_image"], "golang:1.22-bookworm")
