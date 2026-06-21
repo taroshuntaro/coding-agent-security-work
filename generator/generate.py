@@ -9,7 +9,7 @@ import sys
 from datetime import date
 
 from agentsec import (rules, redlines, orchestrate, questions, summary, stacks,
-                      profile as profile_mod)
+                      detect, profile as profile_mod)
 
 
 def ask_question(q, input_fn=input, print_fn=print):
@@ -25,19 +25,50 @@ def ask_question(q, input_fn=input, print_fn=print):
         return value
 
 
-def collect_interactive(input_fn=input, print_fn=print):
+def confirm(prompt, input_fn=input, default=True):
+    suffix = " [Y/n]: " if default else " [y/N]: "
+    raw = input_fn(prompt + suffix).strip().lower()
+    if raw == "":
+        return default
+    return raw == "y"
+
+
+def _stacks_question():
+    return next(q for q in questions.QUESTIONS if q["key"] == "stacks")
+
+
+def _manual_stacks(input_fn, print_fn):
+    q = _stacks_question()
+    while True:
+        chosen = ask_question(q, input_fn, print_fn)
+        unknown = stacks.unknown_keys(chosen)
+        if not unknown:
+            return chosen
+        print_fn(f"  未対応のスタックです: {', '.join(unknown)}。"
+                 f"対応: {', '.join(sorted(stacks.KNOWN))}。"
+                 f"未対応分は空にして生成後に手動追加してください。")
+
+
+def resolve_stacks_interactive(target_dir, input_fn=input, print_fn=print):
+    result = detect.detect_stacks(target_dir)
+    if result["unsupported"]:
+        print_fn(f"  未対応スタックを検出: {', '.join(result['unsupported'])}。"
+                 f"これらは生成後に手動で追加してください。")
+    if result["known"]:
+        print_fn(f"  検出したスタック: {', '.join(result['known'])}")
+        if confirm("これらを使いますか", input_fn, default=True):
+            return result["known"]
+    else:
+        print_fn("  スタックを検出できませんでした。予定スタックを選択してください"
+                 "（未定なら空 Enter でスキップ）。")
+    return _manual_stacks(input_fn, print_fn)
+
+
+def collect_interactive(input_fn=input, print_fn=print, target_dir="."):
     a = {}
     for q in questions.QUESTIONS:
         if q["key"] == "stacks":
-            while True:
-                chosen = ask_question(q, input_fn, print_fn)
-                unknown = stacks.unknown_keys(chosen)
-                if not unknown:
-                    a["stacks"] = chosen
-                    break
-                print_fn(f"  未対応のスタックです: {', '.join(unknown)}。"
-                         f"対応: {', '.join(sorted(stacks.KNOWN))}。"
-                         f"未対応分は空にして生成後に手動追加してください。")
+            a["stacks"] = resolve_stacks_interactive(target_dir, input_fn, print_fn)
         else:
             a[q["key"]] = ask_question(q, input_fn, print_fn)
 
@@ -56,14 +87,6 @@ def collect_interactive(input_fn=input, print_fn=print):
     }
 
 
-def confirm(prompt, input_fn=input, default=True):
-    suffix = " [Y/n]: " if default else " [y/N]: "
-    raw = input_fn(prompt + suffix).strip().lower()
-    if raw == "":
-        return default
-    return raw == "y"
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile")
@@ -73,12 +96,13 @@ def main(argv=None):
     parser.add_argument("--approver", default="")
     parser.add_argument("--save-profile")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--target-dir", default=".")
     args = parser.parse_args(argv)
 
     if args.profile:
         profile = profile_mod.load(args.profile)
     else:
-        profile = collect_interactive()
+        profile = collect_interactive(target_dir=args.target_dir)
         print(summary.format_summary(profile))
         if not confirm("この内容で生成しますか"):
             print("中止しました。")

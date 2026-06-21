@@ -3,7 +3,7 @@ import tempfile
 import json
 from pathlib import Path
 import generate
-from agentsec import questions
+from agentsec import questions, detect
 
 
 def scripted(inputs):
@@ -34,17 +34,18 @@ class TestAskQuestion(unittest.TestCase):
 
 class TestCollectInteractive(unittest.TestCase):
     def test_unknown_stack_warns_and_reasks(self):
-        # 製品2, level, plan, stacks(不正→正), domains, extra, container, 4 redline questions
-        inputs = ["y", "y", "L2", "team",
-                  "npm,rust", "npm",          # stacks: 未知 rust → 再入力
-                  "github.com", "",
-                  "y", "n", "n", "n", "n"]
-        out, pr = sink()
-        profile = generate.collect_interactive(scripted(inputs), pr)
-        self.assertEqual(profile["stacks"], ["npm"])
-        self.assertTrue(any("rust" in line for line in out))
-        self.assertEqual(profile["level"], "L2")
-        self.assertEqual(profile["products"], ["claude", "codex"])
+        with tempfile.TemporaryDirectory() as d:
+            # 製品2, level, plan, stacks(不正→正), domains, extra, container, 4 redline
+            inputs = ["y", "y", "L2", "team",
+                      "npm,rust", "npm",          # stacks: 未知 rust → 再入力
+                      "github.com", "",
+                      "y", "n", "n", "n", "n"]
+            out, pr = sink()
+            profile = generate.collect_interactive(scripted(inputs), pr, target_dir=d)
+            self.assertEqual(profile["stacks"], ["npm"])
+            self.assertTrue(any("rust" in line for line in out))
+            self.assertEqual(profile["level"], "L2")
+            self.assertEqual(profile["products"], ["claude", "codex"])
 
 
 class TestMainSaveProfile(unittest.TestCase):
@@ -76,3 +77,38 @@ class TestMainOverwriteGuard(unittest.TestCase):
             rc = generate.main(["--profile", str(Path(d) / "in.json"),
                                 "--output", str(out)])
             self.assertEqual(rc, 2)
+
+
+class TestResolveStacksInteractive(unittest.TestCase):
+    def test_detected_stacks_confirmed_with_empty_enter(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "package.json").write_text("", encoding="utf-8")
+            out, pr = sink()
+            # 確認に空 Enter（=はい）
+            chosen = generate.resolve_stacks_interactive(d, scripted([""]), pr)
+            self.assertEqual(chosen, ["npm"])
+            self.assertTrue(any("npm" in line for line in out))
+
+    def test_detected_rejected_then_manual_entry(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "package.json").write_text("", encoding="utf-8")
+            out, pr = sink()
+            # 確認に n（いいえ）→ 手動で go を入力
+            chosen = generate.resolve_stacks_interactive(d, scripted(["n", "go"]), pr)
+            self.assertEqual(chosen, ["go"])
+
+    def test_unsupported_warns_and_falls_to_manual(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "Cargo.toml").write_text("", encoding="utf-8")
+            out, pr = sink()
+            # 検出ゼロ（未対応のみ）→ 手動入力（空 Enter でスキップ）
+            chosen = generate.resolve_stacks_interactive(d, scripted([""]), pr)
+            self.assertEqual(chosen, [])
+            self.assertTrue(any("rust" in line for line in out))
+
+    def test_greenfield_zero_detection_manual_with_reask(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, pr = sink()
+            # 検出なし → 未知 rust で再質問 → npm
+            chosen = generate.resolve_stacks_interactive(d, scripted(["npm,rust", "npm"]), pr)
+            self.assertEqual(chosen, ["npm"])
