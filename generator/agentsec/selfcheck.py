@@ -114,7 +114,8 @@ def check_dir(output_dir):
         if p.parent.name == ".codex":
             _check_codex_config(p, msgs)
     for p in root.rglob("requirements.toml"):
-        _check_codex_requirements(p, msgs)
+        if p.parent.name == "codex":
+            _check_codex_requirements(p, msgs)
     code = 2 if any(m.startswith("FAIL") for m in msgs) else 0
     return code, msgs
 
