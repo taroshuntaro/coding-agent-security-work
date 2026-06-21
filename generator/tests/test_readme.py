@@ -19,3 +19,19 @@ class TestReadme(unittest.TestCase):
         keys = {"claude-code/.claude/settings.json", "claude-code/managed-settings.json"}
         text = readme.apply_steps(keys)
         self.assertIn("managed-settings.json", text)
+
+
+class TestPlacementGuide(unittest.TestCase):
+    def test_managed_row_and_precedence_when_managed_present(self):
+        out = readme.placement_guide({"claude-code/managed-settings.json"})
+        self.assertIn("リポジトリ外", out)
+        self.assertIn("管理 > プロジェクト > ユーザー", out)
+
+    def test_r6_caveat_always_present(self):
+        out = readme.placement_guide({"codex/.codex/config.toml"})
+        self.assertIn("R6", out)
+        self.assertIn("強制ポリシーとみなさない", out)
+
+    def test_managed_row_absent_without_managed_files(self):
+        out = readme.placement_guide({"claude-code/.claude/settings.json"})
+        self.assertNotIn("OS 管理パス", out)

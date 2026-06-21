@@ -12,6 +12,8 @@ REQUIRED_KEYS = ("products", "level", "plan", "stacks", "allowed_domains",
 
 _OPTIONAL_BOOL_KEYS = ("use_full_access", "share_docker_socket", "network_host", "direct_push")
 
+_OPTIONAL_STR_KEYS = ("base_image",)
+
 
 def validate(profile):
     for key in REQUIRED_KEYS:
@@ -27,6 +29,9 @@ def validate(profile):
     for key in _OPTIONAL_BOOL_KEYS:
         if key in profile and not isinstance(profile[key], bool):
             raise ValueError(f"{key} must be a bool when present")
+    for key in _OPTIONAL_STR_KEYS:
+        if key in profile and not isinstance(profile[key], str):
+            raise ValueError(f"{key} must be a str when present")
 
 
 def load(path):

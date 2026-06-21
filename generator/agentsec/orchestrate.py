@@ -86,6 +86,7 @@ def generate(profile, output_dir, deviations, base_image):
         "deviations_block": _deviations_block(deviations),
         "artifact_guide": readme.artifact_guide(artifact_keys),
         "apply_steps": readme.apply_steps(artifact_keys),
+        "placement_guide": readme.placement_guide(artifact_keys),
     }
     files["acceptance/checklist.md"] = _write(output_dir, "acceptance/checklist.md",
         render_text.render("acceptance/checklist.md.tmpl", text_map))

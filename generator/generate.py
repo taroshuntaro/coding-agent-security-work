@@ -9,7 +9,7 @@ import sys
 from datetime import date
 
 from agentsec import (rules, redlines, orchestrate, questions, summary, stacks,
-                      profile as profile_mod)
+                      detect, profile as profile_mod)
 
 
 def ask_question(q, input_fn=input, print_fn=print):
@@ -25,37 +25,6 @@ def ask_question(q, input_fn=input, print_fn=print):
         return value
 
 
-def collect_interactive(input_fn=input, print_fn=print):
-    a = {}
-    for q in questions.QUESTIONS:
-        if q["key"] == "stacks":
-            while True:
-                chosen = ask_question(q, input_fn, print_fn)
-                unknown = stacks.unknown_keys(chosen)
-                if not unknown:
-                    a["stacks"] = chosen
-                    break
-                print_fn(f"  未対応のスタックです: {', '.join(unknown)}。"
-                         f"対応: {', '.join(sorted(stacks.KNOWN))}。"
-                         f"未対応分は空にして生成後に手動追加してください。")
-        else:
-            a[q["key"]] = ask_question(q, input_fn, print_fn)
-
-    products = []
-    if a["include_claude"]:
-        products.append("claude")
-    if a["include_codex"]:
-        products.append("codex")
-    return {
-        "products": products, "level": a["level"], "plan": a["plan"],
-        "stacks": a["stacks"], "allowed_domains": a["allowed_domains"],
-        "extra_deny_paths": a["extra_deny_paths"], "use_container": a["use_container"],
-        "use_full_access": a["use_full_access"],
-        "share_docker_socket": a["share_docker_socket"],
-        "network_host": a["network_host"], "direct_push": a["direct_push"],
-    }
-
-
 def confirm(prompt, input_fn=input, default=True):
     suffix = " [Y/n]: " if default else " [y/N]: "
     raw = input_fn(prompt + suffix).strip().lower()
@@ -64,21 +33,94 @@ def confirm(prompt, input_fn=input, default=True):
     return raw == "y"
 
 
+def _stacks_question():
+    return next(q for q in questions.QUESTIONS if q["key"] == "stacks")
+
+
+def _manual_stacks(input_fn, print_fn):
+    q = _stacks_question()
+    while True:
+        chosen = ask_question(q, input_fn, print_fn)
+        unknown = stacks.unknown_keys(chosen)
+        if not unknown:
+            return chosen
+        print_fn(f"  未対応のスタックです: {', '.join(unknown)}。"
+                 f"対応: {', '.join(sorted(stacks.KNOWN))}。"
+                 f"未対応分は空にして生成後に手動追加してください。")
+
+
+def resolve_stacks_interactive(target_dir, input_fn=input, print_fn=print):
+    result = detect.detect_stacks(target_dir)
+    if result["unsupported"]:
+        print_fn(f"  未対応スタックを検出: {', '.join(result['unsupported'])}。"
+                 f"これらは生成後に手動で追加してください。")
+    if result["known"]:
+        print_fn(f"  検出したスタック: {', '.join(result['known'])}")
+        if confirm("これらを使いますか", input_fn, default=True):
+            return result["known"]
+    else:
+        print_fn("  スタックを検出できませんでした。予定スタックを選択してください"
+                 "（未定なら空 Enter でスキップ）。")
+    return _manual_stacks(input_fn, print_fn)
+
+
+def _resolve_base_image(stack_keys, use_container, override, input_fn, print_fn):
+    if override:
+        return override
+    if not use_container:
+        return detect.DEFAULT_BASE_IMAGE
+    inferred = detect.base_image_for(stack_keys)
+    if inferred:
+        print_fn(f"  推奨ベースイメージ: {inferred}")
+        if confirm("これを使いますか", input_fn, default=True):
+            return inferred
+    return detect.DEFAULT_BASE_IMAGE
+
+
+def collect_interactive(input_fn=input, print_fn=print, target_dir=".",
+                        base_image_override=None):
+    a = {}
+    for q in questions.QUESTIONS:
+        if q["key"] == "stacks":
+            a["stacks"] = resolve_stacks_interactive(target_dir, input_fn, print_fn)
+        else:
+            a[q["key"]] = ask_question(q, input_fn, print_fn)
+
+    products = []
+    if a["include_claude"]:
+        products.append("claude")
+    if a["include_codex"]:
+        products.append("codex")
+    base_image = _resolve_base_image(
+        a["stacks"], a["use_container"], base_image_override, input_fn, print_fn)
+    return {
+        "products": products, "level": a["level"], "plan": a["plan"],
+        "stacks": a["stacks"], "allowed_domains": a["allowed_domains"],
+        "extra_deny_paths": a["extra_deny_paths"], "use_container": a["use_container"],
+        "use_full_access": a["use_full_access"],
+        "share_docker_socket": a["share_docker_socket"],
+        "network_host": a["network_host"], "direct_push": a["direct_push"],
+        "base_image": base_image,
+    }
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile")
     parser.add_argument("--output", default="./generated")
-    parser.add_argument("--base-image", default="node:20-bookworm-slim")
+    parser.add_argument("--base-image", default=None)
     parser.add_argument("--allow-redline-override", action="store_true")
     parser.add_argument("--approver", default="")
     parser.add_argument("--save-profile")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--target-dir", default=".")
     args = parser.parse_args(argv)
 
     if args.profile:
         profile = profile_mod.load(args.profile)
     else:
-        profile = collect_interactive()
+        profile = collect_interactive(target_dir=args.target_dir,
+                                      base_image_override=args.base_image)
         print(summary.format_summary(profile))
         if not confirm("この内容で生成しますか"):
             print("中止しました。")
@@ -117,7 +159,9 @@ def main(argv=None):
         d["approver"] = args.approver
         d["date"] = date.today().isoformat()
 
-    files = orchestrate.generate(profile, args.output, devs, args.base_image)
+    base_image = (args.base_image or profile.get("base_image")
+                  or detect.DEFAULT_BASE_IMAGE)
+    files = orchestrate.generate(profile, args.output, devs, base_image)
     print(f"{len(files)} 件を {args.output} に生成しました。")
     print("検証: python3 acceptance/selfcheck.py", args.output)
     return 0

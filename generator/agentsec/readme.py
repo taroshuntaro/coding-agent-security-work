@@ -43,3 +43,28 @@ def apply_steps(file_keys):
     if "Dockerfile" in file_keys:
         steps.append("- コンテナ: `Dockerfile` / `docker-compose.yml` / `.devcontainer/` を利用")
     return "\n".join(steps)
+
+
+def placement_guide(file_keys):
+    """生成成果物に応じて配置3層・優先順位・R6 注記を返す（純関数）。"""
+    has_managed = ("claude-code/managed-settings.json" in file_keys
+                   or "codex/requirements.toml" in file_keys)
+    has_local = ("claude-code/.claude/settings.json" in file_keys
+                 or "codex/.codex/config.toml" in file_keys)
+    lines = ["設定は強制力で層が分かれます。**守らせたい統制は最上位（管理層）へ"
+             "リポジトリ外から配置**してください（docs/00 R6）。", "",
+             "| 層 | 強制力 | 配置先 |", "|---|---|---|"]
+    if has_managed:
+        lines.append("| 管理 | 利用者/エージェントが解除不能 | "
+                     "**リポジトリ外**（OS 管理パス・MDM・コンテナイメージ） |")
+    if has_local:
+        lines.append("| プロジェクト/ユーザー | 書き換え可能＝強制ではない | "
+                     "リポジトリ内 `.claude/` ／ コンテナ home `~/.codex/` |")
+    lines += ["",
+              "- 優先順位: **管理 > プロジェクト > ユーザー**。ガードレールは管理層に置き、"
+              "`*ManagedOnly` 系で下位層からの再許可を抑止する。",
+              "- **R6**: `.claude/`・`.codex/`・`CLAUDE.md`・`AGENTS.md` 等はリポジトリを"
+              "書ける主体（エージェント自身を含む）が変更できるため、**強制ポリシーとみなさない**。",
+              "- スタック別 allow/ask（`npm test` 等）はプロジェクト層の補助。"
+              "レッドライン・egress 許可・資格情報 denyRead は管理層で固定する。"]
+    return "\n".join(lines)
