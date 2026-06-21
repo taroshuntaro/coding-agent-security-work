@@ -1,44 +1,71 @@
-"""対話 / --profile 再生で設定一式を生成する CLI。"""
+"""対話 / --profile 再生で設定一式を生成する CLI。
+
+純ロジックは agentsec 側にあり、ここは I/O 配線に徹する。input/print は
+引数で注入可能にしてテストできるようにする。
+"""
 
 import argparse
 import sys
 from datetime import date
 
-from agentsec import rules, redlines, orchestrate, profile as profile_mod
+from agentsec import (rules, redlines, orchestrate, questions, summary, stacks,
+                      profile as profile_mod)
 
 
-def _ask(prompt, choices=None):
+def ask_question(q, input_fn=input, print_fn=print):
     while True:
-        ans = input(prompt).strip()
-        if not choices or ans in choices:
-            return ans
-        print(f"  選択肢: {', '.join(choices)}")
+        raw = input_fn(questions.render_prompt(q))
+        status, value = questions.resolve_answer(q, raw)
+        if status == "help":
+            print_fn(f"  {q['detail']}")
+            continue
+        if status == "error":
+            print_fn(f"  {value}")
+            continue
+        return value
 
 
-def _collect_interactive():
+def _answers(input_fn, print_fn):
+    return {q["key"]: ask_question(q, input_fn, print_fn) for q in questions.QUESTIONS}
+
+
+def collect_interactive(input_fn=input, print_fn=print):
+    a = {}
+    for q in questions.QUESTIONS:
+        if q["key"] == "stacks":
+            while True:
+                chosen = ask_question(q, input_fn, print_fn)
+                unknown = stacks.unknown_keys(chosen)
+                if not unknown:
+                    a["stacks"] = chosen
+                    break
+                print_fn(f"  未対応のスタックです: {', '.join(unknown)}。"
+                         f"対応: {', '.join(sorted(stacks.KNOWN))}。"
+                         f"未対応分は空にして生成後に手動追加してください。")
+        else:
+            a[q["key"]] = ask_question(q, input_fn, print_fn)
+
     products = []
-    if _ask("Claude Code を含める? (y/n): ", ["y", "n"]) == "y":
+    if a["include_claude"]:
         products.append("claude")
-    if _ask("Codex を含める? (y/n): ", ["y", "n"]) == "y":
+    if a["include_codex"]:
         products.append("codex")
-    level = _ask(f"レベル {rules.LEVELS}: ", list(rules.LEVELS))
-    plan = _ask("プラン (personal/team): ", list(rules.PLANS))
-    stacks = _ask("スタック (カンマ区切り 例 npm,maven): ").split(",")
-    stacks = [s.strip() for s in stacks if s.strip()]
-    domains = _ask("許可ドメイン (カンマ区切り): ").split(",")
-    domains = [d.strip() for d in domains if d.strip()] or list(rules.DEFAULT_ALLOWED_DOMAINS)
-    extra = _ask("追加 deny パス (カンマ区切り、なければ空): ").split(",")
-    extra = [e.strip() for e in extra if e.strip()]
-    use_container = _ask("コンテナ定義を出力? (y/n): ", ["y", "n"]) == "y"
-    use_full_access = _ask("権限バイパス/フルアクセスを常用しますか? (y/n): ", ["y", "n"]) == "y"
-    share_docker_socket = _ask("コンテナへ Docker socket を共有しますか? (y/n): ", ["y", "n"]) == "y"
-    network_host = _ask("ホストネットワーク(host network)を使用しますか? (y/n): ", ["y", "n"]) == "y"
-    direct_push = _ask("エージェントに直接 push/deploy を行わせますか? (y/n): ", ["y", "n"]) == "y"
-    return {"products": products, "level": level, "plan": plan, "stacks": stacks,
-            "allowed_domains": domains, "extra_deny_paths": extra,
-            "use_container": use_container, "use_full_access": use_full_access,
-            "share_docker_socket": share_docker_socket, "network_host": network_host,
-            "direct_push": direct_push}
+    return {
+        "products": products, "level": a["level"], "plan": a["plan"],
+        "stacks": a["stacks"], "allowed_domains": a["allowed_domains"],
+        "extra_deny_paths": a["extra_deny_paths"], "use_container": a["use_container"],
+        "use_full_access": a["use_full_access"],
+        "share_docker_socket": a["share_docker_socket"],
+        "network_host": a["network_host"], "direct_push": a["direct_push"],
+    }
+
+
+def confirm(prompt, input_fn=input, print_fn=print, default=True):
+    suffix = " [Y/n]: " if default else " [y/N]: "
+    raw = input_fn(prompt + suffix).strip().lower()
+    if raw == "":
+        return default
+    return raw == "y"
 
 
 def main(argv=None):
@@ -48,12 +75,32 @@ def main(argv=None):
     parser.add_argument("--base-image", default="node:20-bookworm-slim")
     parser.add_argument("--allow-redline-override", action="store_true")
     parser.add_argument("--approver", default="")
+    parser.add_argument("--save-profile")
+    parser.add_argument("--force", action="store_true")
     args = parser.parse_args(argv)
 
     if args.profile:
         profile = profile_mod.load(args.profile)
     else:
-        profile = _collect_interactive()
+        profile = collect_interactive()
+        print(summary.format_summary(profile))
+        if not confirm("この内容で生成しますか"):
+            print("中止しました。")
+            return 1
+
+    if args.save_profile:
+        profile_mod.save(args.save_profile, profile)
+        print(f"プロファイルを保存しました: {args.save_profile}")
+
+    if orchestrate.output_has_files(args.output) and not args.force:
+        if args.profile:
+            print(f"出力先 {args.output} は空ではありません。"
+                  f"上書きするには --force を指定してください。")
+            return 2
+        if not confirm(f"出力先 {args.output} は空ではありません。上書きしますか",
+                       default=False):
+            print("中止しました。")
+            return 1
 
     devs = redlines.check_inputs(
         profile["level"], profile["plan"],
@@ -76,7 +123,7 @@ def main(argv=None):
 
     files = orchestrate.generate(profile, args.output, devs, args.base_image)
     print(f"{len(files)} 件を {args.output} に生成しました。")
-    print("検証: python acceptance/selfcheck.py", args.output)
+    print("検証: python3 acceptance/selfcheck.py", args.output)
     return 0
 
 

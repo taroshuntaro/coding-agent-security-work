@@ -14,6 +14,11 @@ def _write(out_root, rel, text):
     return str(path)
 
 
+def output_has_files(output_dir):
+    p = Path(output_dir)
+    return p.exists() and any(p.rglob("*"))
+
+
 def _write_commentable(out_root, rel, text, head):
     return _write(out_root, rel, head + text)
 

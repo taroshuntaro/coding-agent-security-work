@@ -97,3 +97,12 @@ class TestOrchestrate(unittest.TestCase):
             # selfcheck returns exit code 2 for a recorded redline
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 2, msgs)
+
+    def test_output_has_files_false_for_empty(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertFalse(orchestrate.output_has_files(d))
+
+    def test_output_has_files_true_after_generate(self):
+        with tempfile.TemporaryDirectory() as d:
+            orchestrate.generate(self._profile(), d, [], "node:20-bookworm-slim")
+            self.assertTrue(orchestrate.output_has_files(d))
