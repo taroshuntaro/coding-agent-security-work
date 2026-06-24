@@ -222,6 +222,7 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 - `WebFetch(domain:...)` はWebFetch用のpermission rule、`WebSearch`はspecifierを持たない独立ツールである。Bashの`curl`制御と混同しない。
 - server-managed settingsを利用し、取得失敗時に起動を止める場合は、managed settingsへ`"forceRemoteSettingsRefresh": true`を追加する。OS/MDMで保護されたmanaged settingsの方が強い保証を持つ。
 - `autoAllowBashIfSandboxed` を明示的に `false` とする。auto-allowを使うとsandbox内のBashコマンドがpermission modeにかかわらず自動承認され得る。**このキーにはバイパス実例があるため**（[11.4](#114-プロジェクト向け-settingsjson-例)）、`false`運用でも受入テストで確認する。
+- `requiredMinimumVersion`（必要なら `requiredMaximumVersion`）を設定すると、許可バージョン範囲外のクライアント起動を拒否でき、「管理設定が古いクライアントで無視される」問題（[17.2](17-periodic-review.md)）を製品側で防げる。生成ツールは profile の `claude_min_version` を指定したときのみ出力する（既定値は持たない）。
 - `sandbox.filesystem.allowManagedReadPathsOnly`を有効にすると、ユーザー・プロジェクト設定の`allowRead`でmanaged `denyRead`領域を再許可する経路を抑えられる。
 - `disableSkillShellExecution`は、ユーザー・プロジェクト・プラグイン由来のskillsやcustom commandsに埋め込まれたインラインシェル実行を止める例である。
 - `disableAutoMode`はAuto modeを組織として未承認とする例である。Auto modeを採用する場合は、research previewであることとclassifierの境界を評価して外す。

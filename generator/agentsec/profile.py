@@ -12,7 +12,7 @@ REQUIRED_KEYS = ("products", "level", "plan", "stacks", "allowed_domains",
 
 _OPTIONAL_BOOL_KEYS = ("use_full_access", "share_docker_socket", "network_host", "direct_push")
 
-_OPTIONAL_STR_KEYS = ("base_image",)
+_OPTIONAL_STR_KEYS = ("base_image", "claude_min_version")
 
 
 def validate(profile):

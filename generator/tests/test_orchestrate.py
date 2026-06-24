@@ -118,3 +118,14 @@ class TestOrchestrate(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             orchestrate.generate(self._profile(), d, [], "node:20-bookworm-slim")
             self.assertTrue(orchestrate.output_has_files(d))
+
+    def test_managed_settings_carries_min_version(self):
+        prof = {"products": ["claude", "codex"], "level": "L3", "plan": "team",
+                "stacks": ["npm"], "allowed_domains": ["github.com"],
+                "extra_deny_paths": [], "use_container": True}
+        prof["claude_min_version"] = "2.1.163"
+        with tempfile.TemporaryDirectory() as d:
+            orchestrate.generate(prof, d, [], "python:3.12-slim")
+            data = json.loads(
+                (Path(d) / "claude-code/managed-settings.json").read_text(encoding="utf-8"))
+            self.assertEqual(data["requiredMinimumVersion"], "2.1.163")
