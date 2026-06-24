@@ -216,6 +216,8 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 
 注意:
 
+- `allowedMcpServers` の許可リストに加え、`deniedMcpServers` で特定サーバーを明示拒否できる（denylist が優先）。
+- `availableModels` と `enforceAvailableModels: true` で、利用可能モデルを許可リストへ固定できる。データ越境・コスト統制が必要な案件で使用する（ユーザー・プロジェクト設定で許可リストを広げられない）。
 - すべての開発でMCPを禁止する例として `allowedMcpServers: []` を使用している。利用する場合は審査済みサーバーだけを登録する。
 - `allowManagedPermissionRulesOnly` は、ユーザーやプロジェクトが独自のallow/ask/denyを追加することを防ぐため、プロジェクト固有の柔軟性と引き換えになる。
 - `sandbox.network.allowedDomains` は主にsandbox内のBashコマンドの送信先を制御する。Claude Code本体の認証・推論・更新通信は、端末・コンテナ・組織プロキシ側で別途制御する。
