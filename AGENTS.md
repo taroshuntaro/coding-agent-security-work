@@ -33,6 +33,19 @@
   Co-authored-by: Claude <noreply@anthropic.com>
   ```
 
+## CHANGELOG の運用
+
+ルート `CHANGELOG.md` は [Keep a Changelog](https://keepachangelog.com/) 準拠・semver＋日付（`## [X.Y.Z] - YYYY-MM-DD`）・日本語で管理する。**更新はユーザーの明示指示で行う**（自動・常時更新はしない）。
+
+- **「changelog を更新して」と指示されたら**:
+  1. 直近で CHANGELOG を変更したコミットを基準点にする: `git log -1 --format=%H -- CHANGELOG.md`。
+  2. そのコミット（exclusive）から `HEAD` までの `git log` / `git diff` を読み、変更を把握する。Conventional Commits の type を分類のヒントにする（`feat`→Added/Changed、`fix`→Fixed、セキュリティ関連→Security 等）。
+  3. 把握した変更を、日本語の要約として `## [Unreleased]` 節へカテゴリ（Added / Changed / Deprecated / Removed / Fixed / Security）別に追記する。リリース番号はまだ付けない。
+- **「リリースして」「x.y.z で切って」等と指示されたら**:
+  1. `[Unreleased]` の内容を `## [X.Y.Z] - <当日>` へ移す。`[Unreleased]` は空見出しで残す。
+  2. 採番ルール: MAJOR＝レッドライン/不変条件・正典値の破壊的変更や章構成の大改訂・generator 生成物の後方非互換、MINOR＝新しい推奨・設定キー・generator 機能の追加、PATCH＝誤記・確認日更新等の小修正。
+  3. `docs/README.md` の「版／発行日」を当該 semver・日付に一致させる。付録C の基準確認日を更新した場合は CHANGELOG の `### Changed` に1行記録する。
+
 ## 変更後の検証
 
 ```bash
