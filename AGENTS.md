@@ -35,16 +35,13 @@
 
 ## CHANGELOG の運用
 
-ルート `CHANGELOG.md` は [Keep a Changelog](https://keepachangelog.com/) 準拠・semver＋日付（`## [X.Y.Z] - YYYY-MM-DD`）・日本語で管理する。**更新はユーザーの明示指示で行う**（自動・常時更新はしない）。
+ルート `CHANGELOG.md` は、**日付見出し（`## YYYY-MM-DD`）の逆年代ログ**として日本語で管理する（リリース・版番号の概念は持たない）。[Keep a Changelog](https://keepachangelog.com/) のカテゴリ（Added / Changed / Deprecated / Removed / Fixed / Security）を見出し下で借用する。**更新はユーザーの明示指示で行う**（自動・常時更新はしない）。
 
 - **「changelog を更新して」と指示されたら**:
   1. 直近で CHANGELOG を変更したコミットを基準点にする: `git log -1 --format=%H -- CHANGELOG.md`。
   2. そのコミット（exclusive）から `HEAD` までの `git log` / `git diff` を読み、変更を把握する。Conventional Commits の type を分類のヒントにする（`feat`→Added/Changed、`fix`→Fixed、セキュリティ関連→Security 等）。
-  3. 把握した変更を、日本語の要約として `## [Unreleased]` 節へカテゴリ（Added / Changed / Deprecated / Removed / Fixed / Security）別に追記する。リリース番号はまだ付けない。
-- **「リリースして」「x.y.z で切って」等と指示されたら**:
-  1. `[Unreleased]` の内容を `## [X.Y.Z] - <当日>` へ移す。`[Unreleased]` は空見出しで残す。
-  2. 採番ルール: MAJOR＝レッドライン/不変条件・正典値の破壊的変更や章構成の大改訂・generator 生成物の後方非互換、MINOR＝新しい推奨・設定キー・generator 機能の追加、PATCH＝誤記・確認日更新等の小修正。
-  3. `docs/README.md` の「版／発行日」を当該 semver・日付に一致させる。付録C の基準確認日を更新した場合は CHANGELOG の `### Changed` に1行記録する。
+  3. 当日の日付見出し `## YYYY-MM-DD` をファイル先頭側（既存の日付見出しより上）に作る。同日の見出しが既にあればそこへ追記する。変更を日本語の要約でカテゴリ別に書く。
+  4. `docs/README.md` の「最終更新日」を当該日付に合わせる。付録C の基準確認日を更新した場合は CHANGELOG の `### Changed` に1行記録する。
 
 ## 変更後の検証
 

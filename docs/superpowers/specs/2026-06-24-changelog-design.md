@@ -4,6 +4,9 @@
 - 種別: 新規成果物（`CHANGELOG.md`）＋運用プロセス
 - 関連: `docs/README.md`（版・発行日）、`docs/appendix-c-volatile-values.md`（基準確認日）、`AGENTS.md`、`CLAUDE.md`
 
+> [!NOTE]
+> **改訂（2026-06-25）**: 本リポジトリはリリース・配布の概念を持たないため、§2〜§6 で定めた **semver ＋ `[Unreleased]` の2段階モデルを廃止**し、**日付見出し（`## YYYY-MM-DD`）の逆年代ログ**へ移行した。あわせて `docs/README.md` は「版」を廃し「最終更新日」に統一した。現行の運用ルールは `AGENTS.md`「CHANGELOG の運用」、現行の成果物は `CHANGELOG.md`・`docs/README.md` を正とする。以下 §2〜§6 は初期設計の記録として残す。
+
 ## 1. 目的とスコープ
 
 本リポジトリの変更履歴を人間が追えるよう、ルートに `CHANGELOG.md` を新設し、継続運用する。**リポジトリ全体（docs ガイド＋generator）を一本の CHANGELOG** で扱い、セクション粒度では Keep a Changelog の標準カテゴリで区別する。

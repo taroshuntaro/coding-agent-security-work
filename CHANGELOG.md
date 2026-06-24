@@ -2,13 +2,10 @@
 
 本リポジトリ（セキュリティ・運用ガイド `docs/` と生成ツール `generator/`）の変更履歴。
 
-- 形式は [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に準拠する。
-- バージョンは [セマンティック バージョニング](https://semver.org/lang/ja/) を本リポジトリ向けに運用する（採番ルールは `AGENTS.md`「CHANGELOG の運用」を参照）。
+- [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) のカテゴリ（Added / Changed 等）を借りつつ、**日付見出し（`## YYYY-MM-DD`）の逆年代ログ**として運用する（リリース・版番号の概念は持たない）。
 - 更新手順は `AGENTS.md`「CHANGELOG の運用」を参照。ユーザーの指示で更新する。
 
-## [Unreleased]
-
-## [1.1.0] - 2026-06-24
+## 2026-06-24
 
 ### Added
 - 資格情報ガードの新手段を docs 化: `sandbox.filesystem.allowRead`（プロジェクト設定限定の堅牢パターン）、`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`、`sandbox.credentials`。
@@ -22,7 +19,7 @@
 - Issue #43713 を「バイパス報告」から「シェル展開で過剰にプロンプトが出る別件（open）」へ再分類（#29016 のバイパス警告は維持）。
 - Codex `web_search` は `disabled` / `cached` / `live` の3値のまま（changelog で告知された indexed 機能は config トークン非公開のため値追加せず）。
 
-## [1.0.0] - 2026-06-20
+## 2026-06-20
 
 ### Added
 - セキュリティ・運用ガイド初版（`docs/`: レッドライン、レベル L0〜L4 × プラン × 製品、Codex / Claude Code 個別方針、MCP・Plugins・Hooks、Git/CI・CD、受入テスト、付録 A〜C ほか）。
