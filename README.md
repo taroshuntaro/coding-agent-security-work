@@ -58,7 +58,11 @@ cd generator
 python3 -m unittest discover -s tests
 ```
 
+## 変更履歴
+
+変更履歴は[`CHANGELOG.md`](CHANGELOG.md)を参照（日付見出しの逆年代ログ。更新手順は[`AGENTS.md`](AGENTS.md)「CHANGELOG の運用」）。
+
 ## 設計ドキュメント
 
-- 設計仕様: [`docs/superpowers/specs/2026-06-21-agent-config-generator-design.md`](docs/superpowers/specs/2026-06-21-agent-config-generator-design.md)
 - 実装計画: [`docs/superpowers/plans/2026-06-21-agent-config-generator.md`](docs/superpowers/plans/2026-06-21-agent-config-generator.md)
+- 設計仕様（個別）: [`docs/superpowers/specs/`](docs/superpowers/specs/)
