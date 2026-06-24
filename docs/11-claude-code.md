@@ -126,11 +126,14 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 }
 ```
 
+生成ツール（`generator/`）の `settings.json` は摩擦の小さい明示列挙（`~/.ssh`・`~/.aws`・`~/.kube`）を既定とする。上記の `~/` 全遮断はより強い代替であり、案件要件に応じて手動で切り替える。
+
 実際のビルドツールに合わせて `npm` 部分をMaven、Gradle、Python、.NETなどへ置き換える。
 
 - `sandbox.filesystem.denyRead` は明示しない限り資格情報を読めてしまうため（[11.1の警告](#111-基本的な考え方)）、必ず指定する。
-- `autoAllowBashIfSandboxed` を `false` にすると、sandbox内のBashコマンドもregular permission flowを通る。**このキーはサンドボックス自体を無効化するコマンドの自動承認や、シェル展開によるバイパスが報告されている**（[Issue #29016](https://github.com/anthropics/claude-code/issues/29016)、[#43713](https://github.com/anthropics/claude-code/issues/43713)）。auto-allowを使う場合も受入テストで実挙動を確認する。
+- `autoAllowBashIfSandboxed` を `false` にすると、sandbox内のBashコマンドもregular permission flowを通る。**このキーはサンドボックス自体を無効化するコマンドの自動承認や、シェル展開によるバイパスが報告されている**（[Issue #29016](https://github.com/anthropics/claude-code/issues/29016)、[#43713](https://github.com/anthropics/claude-code/issues/43713)）。auto-allowを使う場合も受入テストで実挙動を確認する。なお同 Issue #29016 は closed である（2026-06-24 確認、修正バージョンは要特定）。closed であっても挙動はバージョン依存のため、受入テストでの確認は引き続き必須とする。
 - Claude Codeのpermission ruleは、`deny`、`ask`、`allow`の順で評価される。広い`ask`ルールは狭い`allow`ルールより先に一致するため、たとえば`ask`へbareの`WebFetch`を置くと、`allow`の`WebFetch(domain:docs.company.example)`も自動許可されない。未一致のWeb取得を確認させたい場合は、`default` modeの通常の確認フローへ委ねる。
+- より強くホーム配下全体の読み取りを遮断したい場合、**プロジェクト `settings.json` に限り** `sandbox.filesystem.denyRead` に `~/`、`sandbox.filesystem.allowRead` に `.` を指定し、ホーム全体を遮断してプロジェクトのみ再許可できる。`allowRead` の `.` は**プロジェクト設定でのみ**プロジェクトルートに解決される。`~/.claude/settings.json` や `managed-settings.json` に同じ指定を置くと `.` は `~/.claude` に解決され意図がずれるため、グローバル・管理設定では従来どおり `~/.ssh`・`~/.aws`・`~/.kube` を明示列挙する。ホーム配下のツールチェインやキャッシュ読み取りを必要とするビルドでは `~/` 全遮断が失敗の原因になり得るため、案件のビルド要件を確認してから採用する。
 
 ---
 
@@ -213,12 +216,15 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 
 注意:
 
+- `allowedMcpServers` の許可リストに加え、`deniedMcpServers` で特定サーバーを明示拒否できる（denylist が優先）。
+- `availableModels` と `enforceAvailableModels: true` で、利用可能モデルを許可リストへ固定できる。データ越境・コスト統制が必要な案件で使用する（ユーザー・プロジェクト設定で許可リストを広げられない）。
 - すべての開発でMCPを禁止する例として `allowedMcpServers: []` を使用している。利用する場合は審査済みサーバーだけを登録する。
 - `allowManagedPermissionRulesOnly` は、ユーザーやプロジェクトが独自のallow/ask/denyを追加することを防ぐため、プロジェクト固有の柔軟性と引き換えになる。
 - `sandbox.network.allowedDomains` は主にsandbox内のBashコマンドの送信先を制御する。Claude Code本体の認証・推論・更新通信は、端末・コンテナ・組織プロキシ側で別途制御する。
 - `WebFetch(domain:...)` はWebFetch用のpermission rule、`WebSearch`はspecifierを持たない独立ツールである。Bashの`curl`制御と混同しない。
 - server-managed settingsを利用し、取得失敗時に起動を止める場合は、managed settingsへ`"forceRemoteSettingsRefresh": true`を追加する。OS/MDMで保護されたmanaged settingsの方が強い保証を持つ。
 - `autoAllowBashIfSandboxed` を明示的に `false` とする。auto-allowを使うとsandbox内のBashコマンドがpermission modeにかかわらず自動承認され得る。**このキーにはバイパス実例があるため**（[11.4](#114-プロジェクト向け-settingsjson-例)）、`false`運用でも受入テストで確認する。
+- `requiredMinimumVersion`（必要なら `requiredMaximumVersion`）を設定すると、許可バージョン範囲外のクライアント起動を拒否でき、「管理設定が古いクライアントで無視される」問題（[17.2](17-periodic-review.md)）を製品側で防げる。生成ツールは profile の `claude_min_version` を指定したときのみ出力する（既定値は持たない）。
 - `sandbox.filesystem.allowManagedReadPathsOnly`を有効にすると、ユーザー・プロジェクト設定の`allowRead`でmanaged `denyRead`領域を再許可する経路を抑えられる。
 - `disableSkillShellExecution`は、ユーザー・プロジェクト・プラグイン由来のskillsやcustom commandsに埋め込まれたインラインシェル実行を止める例である。
 - `disableAutoMode`はAuto modeを組織として未承認とする例である。Auto modeを採用する場合は、research previewであることとclassifierの境界を評価して外す。
@@ -237,6 +243,9 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 | BashからのHTTP通信 | `sandbox.network.allowedDomains` / `deniedDomains`、OS・プロキシ、Bashルール |
 | Claude Code本体のモデル通信 | 端末・コンテナ・企業プロキシ・認証方式のネットワークポリシー |
 | MCP・Hooks | MCP allowlist、Hooks管理、各プロセスのネットワーク・資格情報 |
+
+> [!NOTE]
+> 組み込みプロキシは要求ホスト名で許可判定し、TLSを終端・検査しない。`github.com` のような広いドメインを許可すると、ドメインフロンティング等で許可外ホストへ到達し得る（exfiltration 経路）。脅威モデル上TLS検査が必要なら、TLS終端するカスタムプロキシ（`httpProxyPort`/`socksProxyPort`）とCA配布を用いる。`enableWeakerNetworkIsolation` は MITM プロキシ併用時の緩和であり、無条件に有効化しない。
 
 一つの経路を止めても、別経路から同じ情報へ到達できる場合がある。機密案件では、不要なツールをdenyし、外側のネットワーク制御も適用する。
 
@@ -268,7 +277,8 @@ Anthropic公式ドキュメントでは、Claude Codeを開発コンテナ内に
 - ユーザー・プロジェクトが任意のMCP、Hooks、permission allowを追加できる
 - `.env` denyだけで、PythonやNodeなどの間接読み取りまで防げると判断する
 - エージェントに直接push・deploy・本番操作させる
+- macOSで `sandbox.allowAppleEvents` を安易に有効化する（既定でApple Eventsを遮断している。`open`・`osascript` 等のため有効化するとコード実行隔離が外れ、他アプリを無確認で起動し得る。user/managed/CLI設定でのみ有効で、project設定からは有効化できない）
 
-Claude CodeのRead/Edit denyは有用だが、任意のサブプロセスが独自にファイルを開くケースまで完全に防ぐには、OSレベルのsandbox filesystem制御や外側のコンテナ・VM境界が必要である。
+Claude CodeのRead/Edit denyは有用だが、任意のサブプロセスが独自にファイルを開くケースまで完全に防ぐには、OSレベルのsandbox filesystem制御や外側のコンテナ・VM境界が必要である。なお、サンドボックスは全スコープの `settings.json` と管理設定ディレクトリへの書き込みを自動的に拒否するため、サンドボックス内コマンドは自身のポリシーを書き換えられない。
 
 [← 目次へ戻る](README.md) ｜ [次：12 CodexとClaude Codeの対応関係 →](12-product-mapping.md)

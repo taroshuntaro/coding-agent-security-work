@@ -21,3 +21,12 @@ class TestBuildClaude(unittest.TestCase):
         self.assertTrue(m["allowManagedDomainsOnly"]
                         if "allowManagedDomainsOnly" in m
                         else m["sandbox"]["network"]["allowManagedDomainsOnly"])
+
+    def test_managed_settings_omits_required_version_by_default(self):
+        s = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
+        self.assertNotIn("requiredMinimumVersion", s)
+
+    def test_managed_settings_includes_required_version_when_given(self):
+        s = build_claude.build_managed_settings(
+            "L3", ["npm"], ["github.com"], [], [], claude_min_version="2.1.163")
+        self.assertEqual(s["requiredMinimumVersion"], "2.1.163")

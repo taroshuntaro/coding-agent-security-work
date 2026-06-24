@@ -52,7 +52,9 @@ def generate(profile, output_dir, deviations, base_image):
         if plan == "team" and lvl in ("L3", "L4"):
             files["claude-code/managed-settings.json"] = _write(
                 output_dir, "claude-code/managed-settings.json",
-                _json(build_claude.build_managed_settings(lvl, stacks_keys, domains, extra, [])))
+                _json(build_claude.build_managed_settings(
+                    lvl, stacks_keys, domains, extra, [],
+                    claude_min_version=profile.get("claude_min_version"))))
 
     if "codex" in profile["products"]:
         files["codex/.codex/config.toml"] = _write_commentable(

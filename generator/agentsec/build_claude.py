@@ -32,10 +32,11 @@ def build_settings(level, stacks_keys, allowed_domains, extra_deny_paths):
     }
 
 
-def build_managed_settings(level, stacks_keys, allowed_domains, extra_deny_paths, denied_domains):
+def build_managed_settings(level, stacks_keys, allowed_domains, extra_deny_paths,
+                           denied_domains, claude_min_version=None):
     prof = rules.level_profile(level)
     cmds = stacks.commands_for(stacks_keys)
-    return {
+    settings = {
         "$schema": SCHEMA,
         "disableArtifact": True,
         "disableRemoteControl": True,
@@ -72,3 +73,6 @@ def build_managed_settings(level, stacks_keys, allowed_domains, extra_deny_paths
         "allowManagedHooksOnly": True,
         "disableSkillShellExecution": True,
     }
+    if claude_min_version:
+        settings["requiredMinimumVersion"] = claude_min_version
+    return settings

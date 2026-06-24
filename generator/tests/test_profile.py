@@ -60,3 +60,14 @@ class TestProfile(unittest.TestCase):
             p["base_image"] = "golang:1.22-bookworm"
             profile.save(path, p)
             self.assertEqual(profile.load(path)["base_image"], "golang:1.22-bookworm")
+
+    def test_claude_min_version_must_be_str(self):
+        p = self._valid()
+        p["claude_min_version"] = 1
+        with self.assertRaises(ValueError):
+            profile.validate(p)
+
+    def test_claude_min_version_str_ok(self):
+        p = self._valid()
+        p["claude_min_version"] = "2.1.163"
+        profile.validate(p)  # raises しなければ OK
