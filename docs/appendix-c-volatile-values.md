@@ -30,12 +30,12 @@
 | Bash sandbox 既定read | `~/.aws/credentials`・`~/.ssh/` を**読める**。`denyRead`で明示遮断が必要 | ✅ | 2026-06-20 | [sandboxing](https://code.claude.com/docs/en/sandboxing) |
 | sandbox 対応OS | macOS / Linux / WSL2（ネイティブWindows・WSL1非対応） | ✅ | 2026-06-20 | 同上 |
 | `failIfUnavailable` 既定挙動 | 未設定時は警告して**非サンドボックスで継続**（fail-open）。`true`で起動拒否 | ✅ | 2026-06-20 | 同上 |
-| `autoAllowBashIfSandboxed` | 実在。auto-allowでpermission modeに関わらず自動承認され得る。**シェル展開・sandbox無効化コマンドによるバイパス報告あり**（#29016 は closed・2026-06-24 確認、修正バージョン要特定。#43713 は要確認） | ✅ | 2026-06-24 | [#29016](https://github.com/anthropics/claude-code/issues/29016) / [#43713](https://github.com/anthropics/claude-code/issues/43713) |
+| `autoAllowBashIfSandboxed` | 実在。auto-allowでpermission modeに関わらず自動承認され得る。**sandbox無効化コマンドの自動承認によるバイパス報告あり**（#29016 は closed・2026-06-24 確認、修正バージョン要特定）。#43713 は open だが、シェル展開を含むコマンドで**過剰にプロンプトが出る**挙動の報告であり、バイパスではない | ✅ | 2026-06-24 | [#29016](https://github.com/anthropics/claude-code/issues/29016) / [#43713](https://github.com/anthropics/claude-code/issues/43713) |
 | `disableBypassPermissionsMode` | 実在（値 `"disable"`）。**特定バージョンで無効だった実例あり** | ✅ | 2026-06-20 | [#44642](https://github.com/anthropics/claude-code/issues/44642) |
 | `sandbox.filesystem.allowRead` | `denyRead` 領域内の再許可。`.` はプロジェクト設定でのみプロジェクトルートに解決 | ✅ | 2026-06-24 | [sandboxing](https://code.claude.com/docs/en/sandboxing) |
 | `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` | サブプロセス環境変数からAnthropic・クラウド資格情報を除去 | ✅ | 2026-06-24 | [env-vars](https://code.claude.com/docs/en/env-vars) |
 | MCP denylist / モデル固定 | `deniedMcpServers` / `availableModels` / `enforceAvailableModels` | ✅ | 2026-06-24 | [settings](https://code.claude.com/docs/en/settings) |
-| `sandbox.credentials` | 資格情報ファイル＋シークレット環境変数の読取を一括ブロック（CHANGELOG報告。要正式確認） | ⚠️ | — | 導入時に[settings](https://code.claude.com/docs/en/settings)で確認 |
+| `sandbox.credentials` | 資格情報ファイル＋シークレット環境変数の読取を一括ブロック（v2.1.187 で追加。settingsリファレンス未掲載のためスキーマは導入時確認） | ✅ | 2026-06-24 | [CHANGELOG v2.1.187](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) |
 | `sandbox.allowAppleEvents` | macOSのApple Events許可（既定遮断。有効化で隔離低下。project設定不可） | ✅ | 2026-06-24 | [sandboxing](https://code.claude.com/docs/en/sandboxing) |
 | managed強制キー | `allowManagedReadPathsOnly` / `allowManagedDomainsOnly` / `allowManagedMcpServersOnly` / `allowManagedPermissionRulesOnly` / `allowManagedHooksOnly` / `disableSkillShellExecution` / `disableAutoMode` / `forceRemoteSettingsRefresh` | ✅ | 2026-06-20 | [settings](https://code.claude.com/docs/en/settings) |
 | データ系キー | `disableArtifact` / `disableRemoteControl` / `disableClaudeAiConnectors` / `autoMemoryEnabled` / `cleanupPeriodDays` | ✅ | 2026-06-20 | 同上 |
