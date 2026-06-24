@@ -29,7 +29,7 @@
 | Bash sandbox 既定read | `~/.aws/credentials`・`~/.ssh/` を**読める**。`denyRead`で明示遮断が必要 | ✅ | 2026-06-20 | [sandboxing](https://code.claude.com/docs/en/sandboxing) |
 | sandbox 対応OS | macOS / Linux / WSL2（ネイティブWindows・WSL1非対応） | ✅ | 2026-06-20 | 同上 |
 | `failIfUnavailable` 既定挙動 | 未設定時は警告して**非サンドボックスで継続**（fail-open）。`true`で起動拒否 | ✅ | 2026-06-20 | 同上 |
-| `autoAllowBashIfSandboxed` | 実在。auto-allowでpermission modeに関わらず自動承認され得る。**シェル展開・sandbox無効化コマンドによるバイパス報告あり** | ✅ | 2026-06-20 | [#29016](https://github.com/anthropics/claude-code/issues/29016) / [#43713](https://github.com/anthropics/claude-code/issues/43713) |
+| `autoAllowBashIfSandboxed` | 実在。auto-allowでpermission modeに関わらず自動承認され得る。**シェル展開・sandbox無効化コマンドによるバイパス報告あり**（#29016 は closed・2026-06-24 確認、修正バージョン要特定。#43713 は要確認） | ✅ | 2026-06-24 | [#29016](https://github.com/anthropics/claude-code/issues/29016) / [#43713](https://github.com/anthropics/claude-code/issues/43713) |
 | `disableBypassPermissionsMode` | 実在（値 `"disable"`）。**特定バージョンで無効だった実例あり** | ✅ | 2026-06-20 | [#44642](https://github.com/anthropics/claude-code/issues/44642) |
 | `sandbox.filesystem.allowRead` | `denyRead` 領域内の再許可。`.` はプロジェクト設定でのみプロジェクトルートに解決 | ✅ | 2026-06-24 | [sandboxing](https://code.claude.com/docs/en/sandboxing) |
 | `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` | サブプロセス環境変数からAnthropic・クラウド資格情報を除去 | ✅ | 2026-06-24 | [env-vars](https://code.claude.com/docs/en/env-vars) |
