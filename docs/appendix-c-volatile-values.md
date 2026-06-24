@@ -11,8 +11,9 @@
 
 | 項目 | 値 | 検証状態 | 確認日 | 出典 |
 |---|---|---|---|---|
-| `web_search` のモード | `disabled` / `cached` / `live`（旧boolean併存） | ✅ | 2026-06-20 | [config-reference](https://developers.openai.com/codex/config-reference) |
-| `web_search` 既定値 | `cached`。full accessサンドボックス時は `live` | ✅ | 2026-06-20 | 同上 |
+| `web_search` のモード | `disabled` / `cached` / `live`（旧boolean併存） | ✅ | 2026-06-24 | [config-reference](https://developers.openai.com/codex/config-reference) |
+| `web_search` 既定値 | `cached`。full accessサンドボックス時は `live` | ✅ | 2026-06-24 | 同上 |
+| `web_search` のサーバー承認URL限定検索 | 告知あり（Codex 0.142.0）だが config-reference 上は値トークン未公開。`disabled`/`cached`/`live` のまま | ⚠️ | 2026-06-24 | [config-reference](https://developers.openai.com/codex/config-reference) |
 | `approval_policy` 値 | `untrusted` / `on-request` / `never` | ✅ | 2026-06-20 | 同上 |
 | `sandbox_mode` 値 | `read-only` / `workspace-write` / `danger-full-access` | ✅ | 2026-06-20 | 同上 |
 | `glob_scan_max_depth` 制約 | 設定時は最低1 | ✅ | 2026-06-20 | 同上 |
