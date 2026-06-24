@@ -244,6 +244,9 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 | Claude Code本体のモデル通信 | 端末・コンテナ・企業プロキシ・認証方式のネットワークポリシー |
 | MCP・Hooks | MCP allowlist、Hooks管理、各プロセスのネットワーク・資格情報 |
 
+> [!NOTE]
+> 組み込みプロキシは要求ホスト名で許可判定し、TLSを終端・検査しない。`github.com` のような広いドメインを許可すると、ドメインフロンティング等で許可外ホストへ到達し得る（exfiltration 経路）。脅威モデル上TLS検査が必要なら、TLS終端するカスタムプロキシ（`httpProxyPort`/`socksProxyPort`）とCA配布を用いる。`enableWeakerNetworkIsolation` は MITM プロキシ併用時の緩和であり、無条件に有効化しない。
+
 一つの経路を止めても、別経路から同じ情報へ到達できる場合がある。機密案件では、不要なツールをdenyし、外側のネットワーク制御も適用する。
 
 ## 11.7 開発コンテナでのClaude Code
@@ -274,6 +277,8 @@ Anthropic公式ドキュメントでは、Claude Codeを開発コンテナ内に
 - ユーザー・プロジェクトが任意のMCP、Hooks、permission allowを追加できる
 - `.env` denyだけで、PythonやNodeなどの間接読み取りまで防げると判断する
 - エージェントに直接push・deploy・本番操作させる
+- macOSのサンドボックスは既定でApple Eventsを遮断する。`open`・`osascript` 等のため `sandbox.allowAppleEvents` を有効化するとコード実行隔離が外れる（他アプリを無確認で起動し得る）。user/managed/CLI設定でのみ有効で、project設定からは有効化できない。
+- サンドボックスは全スコープの `settings.json` と管理設定ディレクトリへの書き込みを自動的に拒否するため、サンドボックス内コマンドは自身のポリシーを書き換えられない。
 
 Claude CodeのRead/Edit denyは有用だが、任意のサブプロセスが独自にファイルを開くケースまで完全に防ぐには、OSレベルのsandbox filesystem制御や外側のコンテナ・VM境界が必要である。
 
