@@ -131,7 +131,7 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 実際のビルドツールに合わせて `npm` 部分をMaven、Gradle、Python、.NETなどへ置き換える。
 
 - `sandbox.filesystem.denyRead` は明示しない限り資格情報を読めてしまうため（[11.1の警告](#111-基本的な考え方)）、必ず指定する。
-- `autoAllowBashIfSandboxed` を `false` にすると、sandbox内のBashコマンドもregular permission flowを通る。**このキーはサンドボックス自体を無効化するコマンドの自動承認や、シェル展開によるバイパスが報告されている**（[Issue #29016](https://github.com/anthropics/claude-code/issues/29016)、[#43713](https://github.com/anthropics/claude-code/issues/43713)）。auto-allowを使う場合も受入テストで実挙動を確認する。[Issue #29016](https://github.com/anthropics/claude-code/issues/29016) は closed である（2026-06-24 確認、修正バージョンは要特定）。closed であっても挙動はバージョン依存のため、受入テストでの確認は引き続き必須とする。
+- `autoAllowBashIfSandboxed` を `false` にすると、sandbox内のBashコマンドもregular permission flowを通る。**このキーはサンドボックス自体を無効化するコマンドの自動承認や、シェル展開によるバイパスが報告されている**（[Issue #29016](https://github.com/anthropics/claude-code/issues/29016)、[#43713](https://github.com/anthropics/claude-code/issues/43713)）。auto-allowを使う場合も受入テストで実挙動を確認する。なお同 Issue #29016 は closed である（2026-06-24 確認、修正バージョンは要特定）。closed であっても挙動はバージョン依存のため、受入テストでの確認は引き続き必須とする。
 - Claude Codeのpermission ruleは、`deny`、`ask`、`allow`の順で評価される。広い`ask`ルールは狭い`allow`ルールより先に一致するため、たとえば`ask`へbareの`WebFetch`を置くと、`allow`の`WebFetch(domain:docs.company.example)`も自動許可されない。未一致のWeb取得を確認させたい場合は、`default` modeの通常の確認フローへ委ねる。
 - より強くホーム配下全体の読み取りを遮断したい場合、**プロジェクト `settings.json` に限り** `sandbox.filesystem.denyRead` に `~/`、`sandbox.filesystem.allowRead` に `.` を指定し、ホーム全体を遮断してプロジェクトのみ再許可できる。`allowRead` の `.` は**プロジェクト設定でのみ**プロジェクトルートに解決される。`~/.claude/settings.json` や `managed-settings.json` に同じ指定を置くと `.` は `~/.claude` に解決され意図がずれるため、グローバル・管理設定では従来どおり `~/.ssh`・`~/.aws`・`~/.kube` を明示列挙する。ホーム配下のツールチェインやキャッシュ読み取りを必要とするビルドでは `~/` 全遮断が失敗の原因になり得るため、案件のビルド要件を確認してから採用する。
 
@@ -277,9 +277,8 @@ Anthropic公式ドキュメントでは、Claude Codeを開発コンテナ内に
 - ユーザー・プロジェクトが任意のMCP、Hooks、permission allowを追加できる
 - `.env` denyだけで、PythonやNodeなどの間接読み取りまで防げると判断する
 - エージェントに直接push・deploy・本番操作させる
-- macOSのサンドボックスは既定でApple Eventsを遮断する。`open`・`osascript` 等のため `sandbox.allowAppleEvents` を有効化するとコード実行隔離が外れる（他アプリを無確認で起動し得る）。user/managed/CLI設定でのみ有効で、project設定からは有効化できない。
-- サンドボックスは全スコープの `settings.json` と管理設定ディレクトリへの書き込みを自動的に拒否するため、サンドボックス内コマンドは自身のポリシーを書き換えられない。
+- macOSで `sandbox.allowAppleEvents` を安易に有効化する（既定でApple Eventsを遮断している。`open`・`osascript` 等のため有効化するとコード実行隔離が外れ、他アプリを無確認で起動し得る。user/managed/CLI設定でのみ有効で、project設定からは有効化できない）
 
-Claude CodeのRead/Edit denyは有用だが、任意のサブプロセスが独自にファイルを開くケースまで完全に防ぐには、OSレベルのsandbox filesystem制御や外側のコンテナ・VM境界が必要である。
+Claude CodeのRead/Edit denyは有用だが、任意のサブプロセスが独自にファイルを開くケースまで完全に防ぐには、OSレベルのsandbox filesystem制御や外側のコンテナ・VM境界が必要である。なお、サンドボックスは全スコープの `settings.json` と管理設定ディレクトリへの書き込みを自動的に拒否するため、サンドボックス内コマンドは自身のポリシーを書き換えられない。
 
 [← 目次へ戻る](README.md) ｜ [次：12 CodexとClaude Codeの対応関係 →](12-product-mapping.md)
