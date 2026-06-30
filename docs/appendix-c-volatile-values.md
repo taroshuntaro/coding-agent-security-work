@@ -35,9 +35,15 @@
 | `sandbox.filesystem.allowRead` | `denyRead` 領域内の再許可。`.` はプロジェクト設定でのみプロジェクトルートに解決 | ✅ | 2026-06-24 | [sandboxing](https://code.claude.com/docs/en/sandboxing) |
 | `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` | サブプロセス環境変数からAnthropic・クラウド資格情報を除去 | ✅ | 2026-06-24 | [env-vars](https://code.claude.com/docs/en/env-vars) |
 | MCP denylist / モデル固定 | `deniedMcpServers` / `availableModels` / `enforceAvailableModels` | ✅ | 2026-06-24 | [settings](https://code.claude.com/docs/en/settings) |
+| `disabledMcpjsonServers` | `.mcp.json` 由来の特定MCPサーバーを名指し拒否（[13.2](13-mcp-plugins-hooks.md)） | ✅ | 2026-06-30 | [settings](https://code.claude.com/docs/en/settings) |
+| `disableSideloadFlags` | `--mcp-config`・`--plugin-dir`・`--plugin-url`・`--agents` の sideload を起動時に拒否（[13.2](13-mcp-plugins-hooks.md)） | ✅ | 2026-06-30 | [settings](https://code.claude.com/docs/en/settings) |
+| `disableAllHooks` | 全Hooks＋カスタムstatuslineを無効化（[13.2](13-mcp-plugins-hooks.md)） | ✅ | 2026-06-30 | [settings](https://code.claude.com/docs/en/settings) |
 | `sandbox.credentials` | 資格情報ファイル＋シークレット環境変数の読取を一括ブロック（v2.1.187 で追加。settingsリファレンス未掲載のためスキーマは導入時確認） | ✅ | 2026-06-24 | [CHANGELOG v2.1.187](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) |
 | `sandbox.allowAppleEvents` | macOSのApple Events許可（既定遮断。有効化で隔離低下。project設定不可） | ✅ | 2026-06-24 | [sandboxing](https://code.claude.com/docs/en/sandboxing) |
 | managed強制キー | `allowManagedReadPathsOnly` / `allowManagedDomainsOnly` / `allowManagedMcpServersOnly` / `allowManagedPermissionRulesOnly` / `allowManagedHooksOnly` / `disableSkillShellExecution` / `disableAutoMode` / `forceRemoteSettingsRefresh` | ✅ | 2026-06-20 | [settings](https://code.claude.com/docs/en/settings) |
+| `disableBundledSkills` | バンドルスキル・ワークフローの無効化。`disableWorkflows`（動的ワークフロー無効化）も併存（[11.9](11-claude-code.md)） | ✅ | 2026-06-30 | [settings](https://code.claude.com/docs/en/settings) |
+| サブエージェント関連の管理キー | `disableAgentView`（background agents・`claude agents`・`--bg`・`/background`・supervisor を無効化）、`disableSideloadFlags`（`--agents`・`--plugin-dir`・`--plugin-url`・`--mcp-config` の sideload を拒否）。**セッション内サブエージェントの個別許可リストは未提供**（[11.9](11-claude-code.md)） | ✅ | 2026-06-30 | [settings](https://code.claude.com/docs/en/settings) |
+| 出力スタイル／`.claude/rules` の管理キー | `outputStyle` は**選択のみ**。出力スタイルの無効化・制限、`.claude/rules` の制御キーは**未提供**（統制はファイルレビュー＋権限・サンドボックス。[11.9](11-claude-code.md)） | ✅ | 2026-06-30 | [settings](https://code.claude.com/docs/en/settings) |
 | データ系キー | `disableArtifact` / `disableRemoteControl` / `disableClaudeAiConnectors` / `autoMemoryEnabled` / `cleanupPeriodDays` | ✅ | 2026-06-20 | 同上 |
 | `requiredMinimumVersion` / `requiredMaximumVersion` | 許可バージョン範囲外のクライアント起動を拒否 | ✅ | 2026-06-24 | [settings](https://code.claude.com/docs/en/settings) |
 | セッション永続化無効化 | `--no-session-persistence` 等（要再確認） | ⚠️ | — | 導入時に[settings](https://code.claude.com/docs/en/settings)で確認 |

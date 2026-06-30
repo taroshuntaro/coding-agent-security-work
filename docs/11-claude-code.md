@@ -281,4 +281,21 @@ Anthropic公式ドキュメントでは、Claude Codeを開発コンテナ内に
 
 Claude CodeのRead/Edit denyは有用だが、任意のサブプロセスが独自にファイルを開くケースまで完全に防ぐには、OSレベルのsandbox filesystem制御や外側のコンテナ・VM境界が必要である。なお、サンドボックスは全スコープの `settings.json` と管理設定ディレクトリへの書き込みを自動的に拒否するため、サンドボックス内コマンドは自身のポリシーを書き換えられない。
 
+---
+
+## 11.9 指示・拡張レイヤーの統制（Subagents・Output Styles・Skills・Rules）
+
+permission・sandbox・MCP/Hooks（[13](13-mcp-plugins-hooks.md)）に加え、Claude Codeはプロジェクト指示やスキル、サブエージェント、出力スタイルでも挙動が変わる（[2.7](02-terms-and-control-layers.md)）。これらは**隔離境界ではなく指示レイヤー**であり、有効/無効や許可リストを切る管理設定キーが**揃っていないものが多い**（[付録C](appendix-c-volatile-values.md)）。確実な禁止は権限deny・サンドボックス・Hookで担保し、指示レイヤーは「リポジトリ由来として信頼前にレビュー」を基本とする。
+
+| レイヤー | 製品側の管理キー | 推奨する統制 |
+|---|---|---|
+| **サブエージェント**（`.claude/agents/`） | `disableAgentView`（background agents・agent viewの無効化）、`disableSideloadFlags`（`--agents` 等の sideload 拒否）。**セッション内サブエージェントの個別許可リストはなし**（[付録C](appendix-c-volatile-values.md)） | 定義ファイルをコードレビュー対象に。permission/sandboxはセッション全体へ及ぶ前提を[15 受入テスト](15-acceptance-tests.md)で確認。無人実行ではサブエージェント経由のツール実行も外側境界（コンテナ・VM・ネットワーク）で限定する |
+| **出力スタイル**（`outputStyle` / output-styles） | 無効化・制限のキーは**なし**（[付録C](appendix-c-volatile-values.md)） | 既定システムプロンプト（安全方針含む）を全置換するcustom output styleを機密案件で使わない運用＋ファイルレビュー。組み込みスタイルで足りる範囲に留める |
+| **スキル・カスタムコマンド** | `disableSkillShellExecution`（インラインシェル実行の抑止）、`disableBundledSkills`（バンドルスキルの無効化） | 上記キーで実行経路を絞り、供給元不明のskill/pluginを許可リスト外で使わない（[13](13-mcp-plugins-hooks.md)） |
+| **ルール**（`.claude/rules/`、`paths:` スコープ） | 制御キーは**なし**（[付録C](appendix-c-volatile-values.md)） | CLAUDE.md肥大化の代替だが被書換のためリポジトリ由来として信頼前レビュー（[00 R6](00-red-lines.md)）。allow/ask/denyの**権限ルールとは別物**で強制ポリシーではない |
+| **プロジェクト指示**（`CLAUDE.md`） | — | 所有者を明示しコードレビュー対象に。リポジトリ由来として信頼前にレビュー |
+
+> [!NOTE]
+> 出力スタイルと `.claude/rules` を強制的に無効化する管理キーは無く、サブエージェントも**個別の許可リスト**は持たない（background agentsは `disableAgentView`、`--agents` 等の sideload は `disableSideloadFlags` で抑止できる）。これらの統制は**ファイルレビュー（コードと同じ扱い）＋ permission/sandbox/外側境界**を基本とし、[15 受入テスト](15-acceptance-tests.md)で実挙動を確認する。
+
 [← 目次へ戻る](README.md) ｜ [次：12 CodexとClaude Codeの対応関係 →](12-product-mapping.md)
