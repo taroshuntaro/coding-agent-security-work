@@ -5,6 +5,14 @@
 - [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) のカテゴリ（Added / Changed 等）を借りつつ、**日付見出し（`## YYYY-MM-DD`）の逆年代ログ**として運用する（リリース・版番号の概念は持たない）。
 - 更新手順は `AGENTS.md`「CHANGELOG の運用」を参照。ユーザーの指示で更新する。
 
+## 2026-06-30
+
+### Added
+- 「指示・拡張レイヤー」を制御面として整理（02.7 新設）。プロジェクト指示・パススコープルール・スキル・サブエージェント・出力スタイルを、隔離境界ではなく「リポジトリ由来としてレビュー＋権限・サンドボックスで統制」する枠組みとして記述。
+- Claude Code 固有の統制を 11.9 に新設。サブエージェント・出力スタイル・スキル・ルールについて、管理キーの有無と推奨統制（ファイルレビュー＋権限・サンドボックス＋外側境界）を表で整理。
+- 13.2 と付録C に Claude Code の管理キーを追記: `disableBundledSkills`（`disableWorkflows` 併記）・`disableAgentView`・`disableSideloadFlags`・`disabledMcpjsonServers`・`disableAllHooks`。`outputStyle` は選択のみで無効化キーは未提供、`.claude/rules` の制御キーも未提供である旨を明記。
+- 導入前チェックリスト（16.6）に、指示・拡張ファイルのコードレビュー化・安全指示の上書き確認・サブエージェント経由ツール実行の境界確認の3項目を追加。
+
 ## 2026-06-24
 
 ### Added
