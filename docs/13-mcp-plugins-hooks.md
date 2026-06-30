@@ -33,6 +33,9 @@ MCP、プラグイン、Hooksは、エージェントの能力を拡張すると
 - 設定ファイルを信頼する前にレビュー
 - 更新時に再審査
 - 許可リスト（`allowedMcpServers`）に加え、明示拒否（`deniedMcpServers`）を併用する（denylist 優先）
+- `.mcp.json` 由来の特定サーバーは `disabledMcpjsonServers`（Claude Code）で名指し拒否できる（許可／拒否リストの補完。[付録C](appendix-c-volatile-values.md)）
+- CLIからの sideload（`--mcp-config`・`--plugin-dir`・`--plugin-url`・`--agents`）は `disableSideloadFlags`（Claude Code）で起動時に拒否し、リポジトリ外・未審査の連携注入を防ぐ（[付録C](appendix-c-volatile-values.md)）
+- Hooksを一律に停止する必要がある環境では `disableAllHooks`（Claude Code。全Hooks＋カスタムstatuslineを無効化）を使う（[付録C](appendix-c-volatile-values.md)）
 
 ## 13.3 プラン別の強制
 
