@@ -70,6 +70,19 @@ QUESTIONS = [
 ]
 
 
+def allowed_domains_question(stack_keys):
+    """allowed_domains 質問のコピーへスタック連動の既定値を設定して返す。"""
+    q = dict(next(q for q in QUESTIONS if q["key"] == "allowed_domains"))
+    extra = [d for d in stacks.domains_for(stack_keys)
+             if d not in rules.DEFAULT_ALLOWED_DOMAINS]
+    default = list(rules.DEFAULT_ALLOWED_DOMAINS) + extra
+    q["default"] = default
+    q["detail"] = (f"空 Enter で既定 ({', '.join(default)}) を採用します。"
+                   "既定には選択スタックのパッケージレジストリを含みます。"
+                   "ここに無いドメインへの接続は遮断されます。")
+    return q
+
+
 def _default_display(q):
     if q["type"] == "csv":
         d = q["default"]
