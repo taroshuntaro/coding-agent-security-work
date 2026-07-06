@@ -48,6 +48,31 @@ class TestCollectInteractive(unittest.TestCase):
             self.assertEqual(profile["level"], "L2")
             self.assertEqual(profile["products"], ["claude", "codex"])
 
+    def test_empty_domains_answer_gets_stack_registry_default(self):
+        with tempfile.TemporaryDirectory() as d:
+            # 製品2, level, plan, stacks, domains(空Enter), extra, container,
+            # 4 redline, base-image 採用
+            inputs = ["y", "y", "L2", "team",
+                      "npm",
+                      "", "",
+                      "y", "n", "n", "n", "n",
+                      ""]
+            out, pr = sink()
+            profile = generate.collect_interactive(scripted(inputs), pr, target_dir=d)
+            self.assertIn("registry.npmjs.org", profile["allowed_domains"])
+            self.assertIn("github.com", profile["allowed_domains"])
+
+    def test_explicit_domains_answer_overrides_dynamic_default(self):
+        with tempfile.TemporaryDirectory() as d:
+            inputs = ["y", "y", "L2", "team",
+                      "npm",
+                      "registry.company.example", "",
+                      "y", "n", "n", "n", "n",
+                      ""]
+            out, pr = sink()
+            profile = generate.collect_interactive(scripted(inputs), pr, target_dir=d)
+            self.assertEqual(profile["allowed_domains"], ["registry.company.example"])
+
 
 class TestMainSaveProfile(unittest.TestCase):
     def test_save_profile_roundtrips(self):

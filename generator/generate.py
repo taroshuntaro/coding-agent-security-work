@@ -83,6 +83,9 @@ def collect_interactive(input_fn=input, print_fn=print, target_dir=".",
     for q in questions.QUESTIONS:
         if q["key"] == "stacks":
             a["stacks"] = resolve_stacks_interactive(target_dir, input_fn, print_fn)
+        elif q["key"] == "allowed_domains":
+            dq = questions.allowed_domains_question(a["stacks"])
+            a["allowed_domains"] = ask_question(dq, input_fn, print_fn)
         else:
             a[q["key"]] = ask_question(q, input_fn, print_fn)
 
