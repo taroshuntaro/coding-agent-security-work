@@ -5,6 +5,15 @@
 - [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) のカテゴリ（Added / Changed 等）を借りつつ、**日付見出し（`## YYYY-MM-DD`）の逆年代ログ**として運用する（リリース・版番号の概念は持たない）。
 - 更新手順は `AGENTS.md`「CHANGELOG の運用」を参照。ユーザーの指示で更新する。
 
+## 2026-07-07
+
+### Added
+- generator: 選択・検出したスタックに応じてパッケージレジストリドメイン（npm → `registry.npmjs.org`、pip → `pypi.org` / `files.pythonhosted.org`、maven / gradle → `repo.maven.apache.org`（gradle は `plugins.gradle.org` も）、go → `proxy.golang.org` / `sum.golang.org`、dotnet → `api.nuget.org`）を許可ドメインの既定として対話時に提案。既定のままでも依存取得が遮断されない構成を最小許可で実現する。提案は対話フロー限定で、`--profile` 再生成は従来どおり profile の明示値のみを使用（再現性・監査記録は不変）。
+
+### Changed
+- generator: 生成される Claude Code 設定（`settings.json` / `managed-settings.json`）の allow に読み取り専用の `Bash(git log *)` を追加（docs/07 7.1 の自動許可候補との整合）。
+- docs/11 の 11.4 / 11.5 設定例に `Bash(git log *)` を追加し、docs/10・docs/11 にレジストリドメイン既定提案の注記を追記（正典＝生成設定の一致を維持）。
+
 ## 2026-06-30
 
 ### Added
