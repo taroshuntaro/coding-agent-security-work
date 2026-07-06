@@ -17,7 +17,8 @@ def build_settings(level, stacks_keys, allowed_domains, extra_deny_paths):
         "$schema": SCHEMA,
         "permissions": {
             "defaultMode": prof["default_mode"],
-            "allow": cmds["allow"] + ["Bash(git status)", "Bash(git diff *)"],
+            "allow": cmds["allow"] + ["Bash(git status)", "Bash(git diff *)",
+                                      "Bash(git log *)"],
             "ask": cmds["ask"] + ["Bash(git commit *)"],
             "deny": _deny_reads(extra_deny_paths)
                     + [f"Bash({c})" for c in rules.BASE_DENY_COMMANDS],
@@ -47,7 +48,7 @@ def build_managed_settings(level, stacks_keys, allowed_domains, extra_deny_paths
             "defaultMode": prof["default_mode"],
             "disableBypassPermissionsMode": "disable",
             "disableAutoMode": "disable",
-            "allow": ["Bash(git status)", "Bash(git diff *)"],
+            "allow": ["Bash(git status)", "Bash(git diff *)", "Bash(git log *)"],
             "ask": cmds["ask"],
             "deny": _deny_reads(extra_deny_paths) + ["WebSearch"]
                     + [f"Bash({c})" for c in rules.BASE_DENY_COMMANDS],
