@@ -80,6 +80,7 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
       "Bash(npm run test *)",
       "Bash(git status)",
       "Bash(git diff *)",
+      "Bash(git log *)",
       "WebFetch(domain:docs.company.example)"
     ],
     "ask": [
@@ -126,7 +127,7 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 }
 ```
 
-生成ツール（`generator/`）の `settings.json` は摩擦の小さい明示列挙（`~/.ssh`・`~/.aws`・`~/.kube`）を既定とする。上記の `~/` 全遮断はより強い代替であり、案件要件に応じて手動で切り替える。
+生成ツール（`generator/`）の `settings.json` は摩擦の小さい明示列挙（`~/.ssh`・`~/.aws`・`~/.kube`）を既定とする。上記の `~/` 全遮断はより強い代替であり、案件要件に応じて手動で切り替える。また生成ツールは、選択したスタックに応じてパッケージレジストリドメイン（例: npm → `registry.npmjs.org`）を `allowedDomains` の既定として対話時に提案する（提案であり、対話中に編集できる）。
 
 実際のビルドツールに合わせて `npm` 部分をMaven、Gradle、Python、.NETなどへ置き換える。
 
@@ -156,6 +157,7 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
     "allow": [
       "Bash(git status)",
       "Bash(git diff *)",
+      "Bash(git log *)",
       "WebFetch(domain:docs.company.example)"
     ],
     "ask": [
