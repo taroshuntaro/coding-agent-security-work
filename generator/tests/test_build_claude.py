@@ -30,3 +30,13 @@ class TestBuildClaude(unittest.TestCase):
         s = build_claude.build_managed_settings(
             "L3", ["npm"], ["github.com"], [], [], claude_min_version="2.1.163")
         self.assertEqual(s["requiredMinimumVersion"], "2.1.163")
+
+    def test_settings_allow_readonly_git_commands(self):
+        s = build_claude.build_settings("L2", [], ["github.com"], [])
+        for cmd in ("Bash(git status)", "Bash(git diff *)", "Bash(git log *)"):
+            self.assertIn(cmd, s["permissions"]["allow"])
+
+    def test_managed_allow_readonly_git_commands(self):
+        m = build_claude.build_managed_settings("L3", [], ["github.com"], [], [])
+        for cmd in ("Bash(git status)", "Bash(git diff *)", "Bash(git log *)"):
+            self.assertIn(cmd, m["permissions"]["allow"])

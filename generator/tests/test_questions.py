@@ -63,3 +63,30 @@ class TestQuestions(unittest.TestCase):
         status, msg = questions.resolve_answer(self._q("use_full_access"), "x")
         self.assertEqual(status, "error")
         self.assertIn("y", msg)
+
+    def test_allowed_domains_question_includes_stack_registries(self):
+        q = questions.allowed_domains_question(["npm"])
+        self.assertEqual(q["key"], "allowed_domains")
+        for d in rules.DEFAULT_ALLOWED_DOMAINS:
+            self.assertIn(d, q["default"])
+        self.assertIn("registry.npmjs.org", q["default"])
+        # DEFAULT が先頭を維持
+        self.assertEqual(q["default"][:len(rules.DEFAULT_ALLOWED_DOMAINS)],
+                         list(rules.DEFAULT_ALLOWED_DOMAINS))
+        # detail に動的既定が反映される
+        self.assertIn("registry.npmjs.org", q["detail"])
+
+    def test_allowed_domains_question_empty_stacks_is_base_default(self):
+        q = questions.allowed_domains_question([])
+        self.assertEqual(q["default"], list(rules.DEFAULT_ALLOWED_DOMAINS))
+
+    def test_allowed_domains_question_does_not_mutate_questions(self):
+        before = list(self._q("allowed_domains")["default"])
+        questions.allowed_domains_question(["npm"])
+        self.assertEqual(self._q("allowed_domains")["default"], before)
+
+    def test_allowed_domains_question_empty_answer_uses_dynamic_default(self):
+        q = questions.allowed_domains_question(["pip"])
+        status, value = questions.resolve_answer(q, "")
+        self.assertEqual(status, "ok")
+        self.assertIn("pypi.org", value)
