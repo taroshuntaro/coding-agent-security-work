@@ -51,6 +51,15 @@ class TestBuildClaude(unittest.TestCase):
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
         self.assertIn("Bash(git commit *)", m["permissions"]["ask"])
 
+    def test_settings_network_strict_allowlist(self):
+        # docs/11 11.4: 許可リスト外ホストは確認でなく拒否（v2.1.219 未満では無視）
+        s = build_claude.build_settings("L2", ["npm"], ["github.com"], [])
+        self.assertIs(s["sandbox"]["network"]["strictAllowlist"], True)
+
+    def test_managed_network_strict_allowlist(self):
+        m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
+        self.assertIs(m["sandbox"]["network"]["strictAllowlist"], True)
+
     def test_managed_denies_websearch_not_ask(self):
         # managed では WebSearch は deny（11.5）。ask に重複させない
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])

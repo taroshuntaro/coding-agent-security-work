@@ -10,7 +10,7 @@
 | OSレベル制限 | sandbox / permission profile | sandbox filesystem/network |
 | 機密ファイルdeny | permission profile filesystem deny | `permissions.deny`＋sandbox denyRead |
 | コマンドネットワーク | permission profile network | sandbox network |
-| 組み込みWeb機能 | `web_search`（`disabled` / `cached` / `live`） | `WebSearch`、`WebFetch`のpermission rule。Bash通信は別制御 |
+| 組み込みWeb機能 | `web_search`（`disabled` / `cached` / `indexed` / `live`） | `WebSearch`、`WebFetch`のpermission rule。Bash通信は別制御 |
 | 管理強制 | `requirements.toml`、managed config | managed settings |
 | 全権限 | `:danger-full-access` | `bypassPermissions` |
 | 外部ツール | MCP設定・管理制限 | MCP・Hooks・Pluginsの管理制限 |

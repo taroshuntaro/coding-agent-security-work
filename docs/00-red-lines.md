@@ -32,7 +32,7 @@
 `.env`の読み取り、ワークスペース外書き込み、任意通信、未承認MCP、`git push`などが**実際に拒否される**ことを、導入時と製品更新時に検証する（[15 受入テスト](15-acceptance-tests.md)）。設定キーを記述しただけで統制が効いたとみなさない。
 
 > [!WARNING]
-> 設定キーは、製品バージョンによっては記述しても効かないことがある。たとえばClaude Codeの `disableBypassPermissionsMode` は特定バージョンで無効だった実例がある（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)）。**設定の存在と実効性は別物である。**
+> 設定キーは、製品バージョンによっては記述しても効かないことがある。たとえばClaude Codeの `disableBypassPermissionsMode` は特定バージョンで無効だった実例があり、同Issueは修正されないままcloseされている（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)、closed as not planned・2026-08-04 確認）。**設定の存在と実効性は別物である。**
 
 ## R6. リポジトリ内の設定・指示を信頼済みポリシーとみなさない
 

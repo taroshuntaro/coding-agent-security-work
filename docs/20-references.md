@@ -7,6 +7,9 @@
 
 ## OpenAI / Codex
 
+> [!NOTE]
+> `developers.openai.com/codex` 配下は `learn.chatgpt.com/docs` 配下へ恒久移転している（308リダイレクト。2026-08-04 確認）。以下の旧URLはリダイレクトで到達できる。
+
 - [Sandbox – Codex](https://developers.openai.com/codex/concepts/sandboxing)
 - [Agent approvals & security – Codex](https://developers.openai.com/codex/agent-approvals-security)
 - [Permissions – Codex](https://developers.openai.com/codex/permissions)

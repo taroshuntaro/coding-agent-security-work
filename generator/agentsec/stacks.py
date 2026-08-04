@@ -13,7 +13,8 @@ STACKS = {
     },
     "gradle": {
         "allow": ["Bash(gradle test *)", "Bash(gradle build *)"],
-        "ask": ["Bash(gradle publish *)"],
+        # publish はレジストリ公開＝原則拒否候補（docs/07 7.3）のため ask に置かない
+        "ask": [],
         "domains": ["repo.maven.apache.org", "plugins.gradle.org"],
     },
     "pip": {

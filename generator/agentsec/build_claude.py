@@ -28,7 +28,10 @@ def build_settings(level, stacks_keys, allowed_domains, extra_deny_paths):
             "autoAllowBashIfSandboxed": False,
             "allowUnsandboxedCommands": False,
             "filesystem": {"denyRead": list(rules.CREDENTIAL_DIRS)},
-            "network": {"allowedDomains": list(allowed_domains)},
+            # strictAllowlist: 許可リスト外ホストを確認プロンプトなしで拒否
+            # （v2.1.219 未満では無視され、既定の確認フローに落ちる。docs/11 11.4）
+            "network": {"allowedDomains": list(allowed_domains),
+                        "strictAllowlist": True},
         },
     }
 
@@ -65,6 +68,7 @@ def build_managed_settings(level, stacks_keys, allowed_domains, extra_deny_paths
             "network": {
                 "allowedDomains": list(allowed_domains),
                 "deniedDomains": list(denied_domains),
+                "strictAllowlist": True,
                 "allowManagedDomainsOnly": True,
             },
         },

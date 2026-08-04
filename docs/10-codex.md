@@ -11,9 +11,9 @@ Codex CLI・IDE連携では、サンドボックス、承認ポリシー、Web�
 
 OpenAI公式ドキュメントでは、ローカルクライアントの既定の考え方として、ネットワークなし・アクティブなワークスペースへの書き込み限定が示されている。近年のバージョンでは、組み込みの `:read-only`、`:workspace`、`:danger-full-access` とカスタムpermission profileを利用できる。
 
-`web_search` は `disabled` / `cached` / `live` の3モードを取る（旧来のboolean形式も併存）。既定は `cached`（OpenAI管理インデックスを使い、ライブ取得しない）。full accessサンドボックス利用時は `live` に既定が変化するため、業務既定値として `cached` または `disabled` を明示する。[^ws]
+`web_search` は `disabled` / `cached` / `indexed` / `live` の4モードを取る（旧来のboolean形式も併存）。既定は `cached`（OpenAI管理インデックスを使い、外部Webへ出ない）。`indexed` は検索インデックスが承認したURLに限って外部取得を許すライブ検索、`live` は無制限のライブ取得である。full accessサンドボックス利用時は既定が `live` に変化するため、業務既定値として `cached` または `disabled` を明示する。[^ws]
 
-[^ws]: `web_search` のモードと既定値の確認日・出典は[付録C](appendix-c-volatile-values.md)を参照。`cached`/`live` の3値モードはCodex固有であり、Claude Codeには対応概念がない。 なお、ライブ検索でページ直接取得をサーバー承認URLに限定する機能が告知されているが（Codex 0.142.0）、公式 config-reference 上は `web_search` の値トークンとして公開されておらず（`disabled`/`cached`/`live` のまま、2026-06-24 確認）、業務既定値の選択肢には加えない。
+[^ws]: `web_search` のモードと既定値の確認日・出典は[付録C](appendix-c-volatile-values.md)を参照。多値モードはCodex固有であり、Claude Codeには対応概念がない。0.142.0 で告知されたサーバー承認URL限定検索は、その後 `indexed` として config-reference に公開された（2026-08-04 確認）。`indexed` は `live` より狭いが外部アクセスを伴うため、業務既定値には引き続き `cached`／`disabled` を推奨し、`indexed` の採用は接続先統制を審査のうえ判断する。
 
 ## 10.2 レベル別推奨
 
@@ -57,7 +57,7 @@ OpenAI公式ドキュメントでは、ローカルクライアントの既定�
 | 監査 | 組織アカウントの監査ログ＋設定変更・外部ツール呼び出しの監視 |
 
 > [!CAUTION]
-> クラウド配信型のmanaged requirementsは、端末に有効なキャッシュがなく取得にも失敗した場合、**管理要件なしで起動を継続する（fail-open）**仕様が公式ドキュメントに記載されている。L3・L4で強制力が必要な場合は、クラウド管理だけに依存せず、端末・コンテナ・VM上のシステム管理ファイル、MDM、ネットワーク制御、実行ラッパーを併用し、適用確認に失敗した端末を利用させない（[00 R5](00-red-lines.md)、[15 受入テスト](15-acceptance-tests.md)）。
+> クラウド配信型のmanaged requirementsの取得失敗時挙動について、公式ドキュメントの記載は「有効なキャッシュがなく取得にも失敗した場合はエラーとし、管理要件なしで黙って起動しない（fail-closed方向）」へ更新されている（2026-08-04 確認。以前は fail-open と記載されていた。[付録C](appendix-c-volatile-values.md)）。ただし記載変更の適用バージョンは未確認であり、実挙動はバージョン依存である。L3・L4で強制力が必要な場合は、クラウド管理だけに依存せず、端末・コンテナ・VM上のシステム管理ファイル、MDM、ネットワーク制御、実行ラッパーを併用し、**取得失敗時の実挙動を受入テストで確認**して、適用確認に失敗した端末を利用させない（[00 R5](00-red-lines.md)、[15 受入テスト](15-acceptance-tests.md)）。
 
 ---
 
@@ -111,6 +111,9 @@ enabled = true
 ```
 
 許可ドメインはプロジェクトの依存取得、Git、社内ミラーなどに限定し、`"*"` の全許可を標準にしない。生成ツール（`generator/`）は、選択したスタックに応じてパッケージレジストリドメイン（例: npm → `registry.npmjs.org`）をこの許可リストの既定として対話時に提案する（提案であり、対話中に編集できる）。
+
+> [!NOTE]
+> filesystem の `:root` トークンは、2026-08-04 時点の config-reference に掲載がない（特殊トークンとして記載されているのは `:minimal` と `:workspace_roots`。[付録C](appendix-c-volatile-values.md)）。本章の例は従来どおり `:root` deny を残しているが、適用時に対象バージョンでの有効性を確認し、無効な場合は削除または代替の deny 指定へ置き換える。
 
 ---
 
@@ -174,6 +177,8 @@ prefix_rules = [
 ]
 ```
 
+ネットワークが必要な場合は、[10.4](#104-開発者向け-configtoml-例)と同様に `[permissions.org-workspace.network]` を `enabled = true`＋ドメイン許可リストへ置き換える。生成ツール（`generator/`）は、許可ドメインが指定されたときこの許可リスト形式で出力する。
+
 旧方式の `sandbox_mode` を使用するクライアントでは、少なくとも次を制約する。
 
 ```toml
@@ -207,7 +212,7 @@ Codex webのタスク環境はローカルホストとは分離されたコン�
 
 - ローカルのセッション履歴を保存しない要件がある場合、対応バージョンで `history.persistence = "none"` を検討する（[付録C](appendix-c-volatile-values.md)）。
 - Appshots、Remote Control、Computer Use、Browser Use、Apps、MCP、Hooksは、ローカルコマンドのpermission profileとは別の制御面として審査する。
-- managed requirementsの`[features]`、Apps要件、MCP identity allowlist、managed Hooksを必要に応じて使用する。
+- managed requirementsの`[features]`、Apps要件、MCP identity allowlist（`[mcp_servers]`。stdio は `command`、HTTP は `url` で照合。**空テーブルで全MCP無効**）、managed Hooksを必要に応じて使用する。
 - Codexの承認によるsandbox escalationは、通常のプロファイル内操作とは異なる実行経路である。承認を「一時的な境界解除」として扱い、内容を理解せず恒久許可しない。
 - リモート実行は認証済みのend-to-end暗号化（Noise）リレーで行われるが、リモート実行・委譲の有効化可否は組織で審査する。
 - マルチエージェント委譲は、app-server クライアントでスレッド／ターン単位に「無効・明示要求時のみ・能動」を設定できる。既定の委譲挙動を把握し、不要なら無効化する。

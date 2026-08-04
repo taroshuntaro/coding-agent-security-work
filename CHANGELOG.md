@@ -7,7 +7,18 @@
 
 ## 2026-08-04
 
+### Added
+- generator: 生成される `settings.json` / `managed-settings.json` の `sandbox.network` に `strictAllowlist: true` を追加（docs/11 11.4/11.5 の例と一致）。許可リスト外ホストの扱いを「確認」から「拒否」へ固定する（v2.1.219 未満のクライアントでは無視され、従来の確認フローに落ちる）。
+
+### Changed
+- docs: 2026-06-24 以降の製品アップデートを一次資料で確認し反映。
+  - Codex: `web_search` が `indexed`（検索インデックス承認URLに限る外部取得）を加えた4値に。業務既定は引き続き `cached` / `disabled` を推奨（docs/10・12・付録C）。managed requirements 取得失敗時の公式記載が fail-open から **fail-closed 方向へ更新**されたことを反映（実挙動の受入テスト必須は維持。docs/10 10.3.2）。filesystem の `:root` トークンが現行 config-reference から消失している点に導入時確認の注記を追加（docs/10 10.4・付録C）。`[mcp_servers]` identity allowlist（空テーブルで全MCP無効）等の新 managed キーを付録Cへ記録。公式ドキュメントの `learn.chatgpt.com` への恒久移転（308リダイレクト）を確認し出典URLを更新（付録C・docs/20）。
+  - Claude Code（v2.1.221 時点）: `sandbox.credentials` のスキーマ公開（`deny`/`mask`・`injectHosts`）、`sandbox.filesystem.disabled`（避ける設定として 11.8 へ追加）、`sandbox.network.strictAllowlist`・`tlsTerminate` を反映（docs/11・付録C）。Issue #44642（`disableBypassPermissionsMode` 無効）が **closed（not planned）のまま修正されない**ことを明記し、受入テスト＋外部境界での代替を強調（docs/00・11・15・付録C）。`--no-session-persistence` は print mode 限定で、全モードは `CLAUDE_CODE_SKIP_PROMPT_HISTORY` を使う点を反映（docs/08・11・付録C）。
+- 付録C の基準確認日を 2026-06-24 から 2026-08-04 に更新。
+- docs/11: 11.4 に `sandbox.failIfUnavailable` 未設定時は fail-open である旨の注記を追加し、11.8 のアンチパターン記述との内部矛盾を解消。docs/10: 10.5 に requirements.toml のネットワーク許可リスト形式（generator の出力形式）を明記。
+
 ### Fixed
+- docs/07・generator: パッケージレジストリへの公開（`npm publish`、`gradle publish`、`twine upload` 等）を 07.3 の原則拒否候補に明記し、generator の gradle スタックから `publish` の ask 昇格を除去（全スタックで publish/upload を allow/ask に置かないことをテストで固定）。
 - generator: docs（正典）との整合監査で見つかった生成値のずれを修正:
   - `requirements.toml` の org-workspace に `:workspace_roots` の read 保護（`.devcontainer` / `.codex` / `.git`）を追加（docs/10 10.5 の例と一致）。
   - `settings.json` の ask に `WebSearch` を追加（docs/11 11.4 の例と一致。managed 側は従来どおり deny のみ）。

@@ -69,6 +69,6 @@
 - Codex Cloud / webの環境キャッシュ
 - IDE・ターミナル履歴
 
-案件ごとに保存先を分離し、暗号化、アクセス制御、保持期間、削除手順を定義する。保持が不要な案件では、製品が提供する履歴・メモリ・セッション永続化の無効化を検討する（Codex `history.persistence`、Claude Code `--no-session-persistence` 等。[付録C](appendix-c-volatile-values.md)）。
+案件ごとに保存先を分離し、暗号化、アクセス制御、保持期間、削除手順を定義する。保持が不要な案件では、製品が提供する履歴・メモリ・セッション永続化の無効化を検討する（Codex `history.persistence`、Claude Code `--no-session-persistence`（print mode限定）・`CLAUDE_CODE_SKIP_PROMPT_HISTORY`（全モード）等。[付録C](appendix-c-volatile-values.md)）。
 
 [← 目次へ戻る](README.md) ｜ [次：09 コンテナの推奨設定 →](09-containers.md)
