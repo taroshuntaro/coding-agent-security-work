@@ -5,7 +5,7 @@
 設定ファイルを配布しただけで完了とせず、対象OS・製品バージョン・実行形態ごとにテストする（[00 R5](00-red-lines.md)）。テスト用のダミー値と隔離環境を使用し、本物のシークレットや本番サービスを使わない。
 
 > [!IMPORTANT]
-> **「設定したのに効かない」は理論ではなく実際に起きている。** たとえばClaude Codeの `disableBypassPermissionsMode` は、managed-settings.jsonに記述しても特定バージョンで無効だった実例がある（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)）。`autoAllowBashIfSandboxed` にもシェル展開やサンドボックス無効化コマンドによるバイパス報告がある（[#29016](https://github.com/anthropics/claude-code/issues/29016)、[#43713](https://github.com/anthropics/claude-code/issues/43713)）。だからこそ、設定の**存在**ではなく**実拒否**を確認する。
+> **「設定したのに効かない」は理論ではなく実際に起きている。** たとえばClaude Codeの `disableBypassPermissionsMode` は、managed-settings.jsonに記述しても特定バージョンで無効だった実例があり、同Issueは修正されないままcloseされている（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)、closed as not planned・2026-08-04 確認）。`autoAllowBashIfSandboxed` にもシェル展開やサンドボックス無効化コマンドによるバイパス報告がある（[#29016](https://github.com/anthropics/claude-code/issues/29016)、[#43713](https://github.com/anthropics/claude-code/issues/43713)）。だからこそ、設定の**存在**ではなく**実拒否**を確認する。
 
 ## 15.1 テストマトリクス
 
