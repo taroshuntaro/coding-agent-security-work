@@ -174,6 +174,8 @@ prefix_rules = [
 ]
 ```
 
+ネットワークが必要な場合は、[10.4](#104-開発者向け-configtoml-例)と同様に `[permissions.org-workspace.network]` を `enabled = true`＋ドメイン許可リストへ置き換える。生成ツール（`generator/`）は、許可ドメインが指定されたときこの許可リスト形式で出力する。
+
 旧方式の `sandbox_mode` を使用するクライアントでは、少なくとも次を制約する。
 
 ```toml

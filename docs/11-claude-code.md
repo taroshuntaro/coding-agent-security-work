@@ -132,6 +132,7 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 実際のビルドツールに合わせて `npm` 部分をMaven、Gradle、Python、.NETなどへ置き換える。
 
 - `sandbox.filesystem.denyRead` は明示しない限り資格情報を読めてしまうため（[11.1の警告](#111-基本的な考え方)）、必ず指定する。
+- 本例は `sandbox.failIfUnavailable` を含めていない（未設定時は警告のうえ非サンドボックスで継続する fail-open。[付録C](appendix-c-volatile-values.md)）。サンドボックスを必須統制として数える案件では `"failIfUnavailable": true` を追加し、L3+ では[11.5](#115-管理者向け-managed-settingsjson-例)の managed settings で強制する（[11.8](#118-claude-codeで避ける設定運用)）。
 - `autoAllowBashIfSandboxed` を `false` にすると、sandbox内のBashコマンドもregular permission flowを通る。**このキーはサンドボックス自体を無効化するコマンドの自動承認によるバイパスが報告されている**（[Issue #29016](https://github.com/anthropics/claude-code/issues/29016)）。auto-allowを使う場合も受入テストで実挙動を確認する。なお同 Issue #29016 は closed である（2026-06-24 確認、修正バージョンは要特定）。closed であっても挙動はバージョン依存のため、受入テストでの確認は引き続き必須とする。別件の [#43713](https://github.com/anthropics/claude-code/issues/43713)（open）は、シェル展開を含むコマンドが過剰にプロンプトされる挙動の報告であり、バイパスではない。
 - Claude Codeのpermission ruleは、`deny`、`ask`、`allow`の順で評価される。広い`ask`ルールは狭い`allow`ルールより先に一致するため、たとえば`ask`へbareの`WebFetch`を置くと、`allow`の`WebFetch(domain:docs.company.example)`も自動許可されない。未一致のWeb取得を確認させたい場合は、`default` modeの通常の確認フローへ委ねる。
 - より強くホーム配下全体の読み取りを遮断したい場合、**プロジェクト `settings.json` に限り** `sandbox.filesystem.denyRead` に `~/`、`sandbox.filesystem.allowRead` に `.` を指定し、ホーム全体を遮断してプロジェクトのみ再許可できる。`allowRead` の `.` は**プロジェクト設定でのみ**プロジェクトルートに解決される。`~/.claude/settings.json` や `managed-settings.json` に同じ指定を置くと `.` は `~/.claude` に解決され意図がずれるため、グローバル・管理設定では従来どおり `~/.ssh`・`~/.aws`・`~/.kube` を明示列挙する。ホーム配下のツールチェインやキャッシュ読み取りを必要とするビルドでは `~/` 全遮断が失敗の原因になり得るため、案件のビルド要件を確認してから採用する。
@@ -273,7 +274,7 @@ Anthropic公式ドキュメントでは、Claude Codeを開発コンテナ内に
 
 - ホスト上で `--dangerously-skip-permissions`
 - bind mount・シークレット・広いネットワークを持つコンテナでbypass
-- `sandbox.enabled = true` だけ設定し、起動失敗時に非サンドボックスへフォールバックさせる（`failIfUnavailable: true` を併用する）
+- `sandbox.enabled = true` だけでサンドボックスが統制として効いていると判断する（未設定の `failIfUnavailable` は起動失敗時に非サンドボックスへフォールバックする。必須統制とする場合は `true` を併用する。[11.4の注記](#114-プロジェクト向け-settingsjson-例)）
 - `excludedCommands` へ広いコマンドを登録する
 - Dockerソケットを許可して隔離済みと判断する
 - ユーザー・プロジェクトが任意のMCP、Hooks、permission allowを追加できる
