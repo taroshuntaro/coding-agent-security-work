@@ -25,8 +25,8 @@ QUESTIONS = [
     {"key": "plan", "type": "choice", "choices": list(rules.PLANS), "default": "team",
      "prompt": "契約プラン",
      "help_line": "個人契約(personal)か、チーム/ビジネス契約(team)か。",
-     "detail": ("team かつ L3+ のときのみ組織強制設定"
-                "（managed-settings.json / requirements.toml）を生成します。")},
+     "detail": ("組織強制設定のうち managed-settings.json は team かつ L3+ の"
+                "ときのみ、requirements.toml は team のとき生成します。")},
     {"key": "stacks", "type": "csv", "default": [],
      "prompt": "ビルド/言語スタック（カンマ区切り、無ければ空 Enter）",
      "help_line": f"対象プロジェクトで使うものを選びます。対応: {_STACK_LIST}。",

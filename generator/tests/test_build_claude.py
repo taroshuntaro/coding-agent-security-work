@@ -40,3 +40,19 @@ class TestBuildClaude(unittest.TestCase):
         m = build_claude.build_managed_settings("L3", [], ["github.com"], [], [])
         for cmd in ("Bash(git status)", "Bash(git diff *)", "Bash(git log *)"):
             self.assertIn(cmd, m["permissions"]["allow"])
+
+    def test_settings_asks_websearch(self):
+        # docs/11-claude-code.md 11.4: ask に WebSearch を置く
+        s = build_claude.build_settings("L2", ["npm"], ["github.com"], [])
+        self.assertIn("WebSearch", s["permissions"]["ask"])
+
+    def test_managed_asks_git_commit(self):
+        # docs/11-claude-code.md 11.5: ask に Bash(git commit *) を含む
+        m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
+        self.assertIn("Bash(git commit *)", m["permissions"]["ask"])
+
+    def test_managed_denies_websearch_not_ask(self):
+        # managed では WebSearch は deny（11.5）。ask に重複させない
+        m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
+        self.assertIn("WebSearch", m["permissions"]["deny"])
+        self.assertNotIn("WebSearch", m["permissions"]["ask"])

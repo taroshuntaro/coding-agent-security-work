@@ -10,7 +10,7 @@ def _filesystem_deny_paths(extra_deny_paths):
 
 def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
     prof = rules.level_profile(level)
-    header = "# ~/.codex/config.toml\n# extends = \":workspace\" を前提とする（適用時に確認）\n"
+    header = "# ~/.codex/config.toml\n"
 
     if level == "L1":
         config = {
@@ -20,6 +20,7 @@ def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
         }
         return header + render_toml.dumps(config)
 
+    header += "# extends = \":workspace\" を前提とする（適用時に確認）\n"
     workspace_roots = {p: "deny" for p in _filesystem_deny_paths(extra_deny_paths)}
     workspace_roots[".devcontainer"] = "read"
 
@@ -69,7 +70,12 @@ def build_requirements(level, allowed_domains, extra_deny_paths):
             "org-workspace": {
                 "extends": ":workspace",
                 "description": "Managed workspace access with sensitive files denied",
-                "filesystem": {":root": "deny", ":minimal": "read", "glob_scan_max_depth": 4},
+                "filesystem": {
+                    ":root": "deny", ":minimal": "read", "glob_scan_max_depth": 4,
+                    # docs/10-codex.md 10.5: リポジトリメタデータは read に落とす
+                    ":workspace_roots": {".devcontainer": "read",
+                                         ".codex": "read", ".git": "read"},
+                },
                 "network": org_network,
             },
         },
