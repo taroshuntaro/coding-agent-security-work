@@ -62,3 +62,19 @@ class TestBuildCodex(unittest.TestCase):
         parsed = tomllib.loads(build_codex.build_requirements("L2", [], []))
         net = parsed["permissions"]["org-workspace"]["network"]
         self.assertEqual(net, {"enabled": False})
+
+    def test_requirements_org_workspace_protects_repo_metadata(self):
+        # docs/10-codex.md 10.5: .devcontainer / .codex / .git は read に落とす
+        parsed = tomllib.loads(build_codex.build_requirements("L3", ["github.com"], []))
+        roots = parsed["permissions"]["org-workspace"]["filesystem"][":workspace_roots"]
+        self.assertEqual(roots, {".devcontainer": "read",
+                                 ".codex": "read", ".git": "read"})
+
+    def test_config_l1_header_has_no_workspace_premise(self):
+        # L1 は :read-only であり extends = ":workspace" を前提としない
+        toml = build_codex.build_config("L1", ["npm"], ["github.com"], [])
+        self.assertNotIn(':workspace" を前提', toml)
+
+    def test_config_l2_header_notes_workspace_premise(self):
+        toml = build_codex.build_config("L2", ["npm"], ["github.com"], [])
+        self.assertIn(':workspace" を前提', toml)

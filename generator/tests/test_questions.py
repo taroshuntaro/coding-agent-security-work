@@ -21,6 +21,14 @@ class TestQuestions(unittest.TestCase):
         for key in ("use_full_access", "share_docker_socket", "network_host", "direct_push"):
             self.assertEqual(self._q(key)["default"], "n", key)
 
+    def test_plan_detail_matches_generation_conditions(self):
+        # requirements.toml は team なら全レベルで生成される（orchestrate.py）。
+        # L3+ 限定なのは managed-settings.json のみ（AGENTS.md 不変条件）。
+        detail = self._q("plan")["detail"]
+        self.assertIn("managed-settings.json は team かつ L3+", detail)
+        self.assertIn("requirements.toml は team", detail)
+        self.assertNotIn("managed-settings.json / requirements.toml", detail)
+
     def test_render_prompt_shows_default_and_help(self):
         text = questions.render_prompt(self._q("level"))
         self.assertIn("L2", text)
