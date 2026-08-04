@@ -5,6 +5,16 @@
 - [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) のカテゴリ（Added / Changed 等）を借りつつ、**日付見出し（`## YYYY-MM-DD`）の逆年代ログ**として運用する（リリース・版番号の概念は持たない）。
 - 更新手順は `AGENTS.md`「CHANGELOG の運用」を参照。ユーザーの指示で更新する。
 
+## 2026-08-04
+
+### Fixed
+- generator: docs（正典）との整合監査で見つかった生成値のずれを修正:
+  - `requirements.toml` の org-workspace に `:workspace_roots` の read 保護（`.devcontainer` / `.codex` / `.git`）を追加（docs/10 10.5 の例と一致）。
+  - `settings.json` の ask に `WebSearch` を追加（docs/11 11.4 の例と一致。managed 側は従来どおり deny のみ）。
+  - `managed-settings.json` の ask に `Bash(git commit *)` を追加（docs/11 11.5 の例と一致）。
+  - L1 の Codex `config.toml` から `extends = ":workspace"` 前提のヘッダーコメントを除去（L1 は `:read-only` のため実体と矛盾していた）。
+- generator: plan 質問のヘルプ文の誤記を修正。`requirements.toml` は team なら全レベルで生成され、team かつ L3+ 限定なのは `managed-settings.json` のみ。
+
 ## 2026-07-07
 
 ### Added
