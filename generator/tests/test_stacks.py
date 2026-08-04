@@ -47,3 +47,11 @@ class TestStacks(unittest.TestCase):
         for key, spec in stacks.STACKS.items():
             self.assertIn("domains", spec, key)
             self.assertTrue(spec["domains"], key)
+
+    def test_no_stack_preapproves_registry_publish(self):
+        # docs/07 7.3: パッケージレジストリへの公開は原則拒否候補。
+        # allow / ask で publish 系を事前に格上げしない。
+        for key, spec in stacks.STACKS.items():
+            for cmd in spec["allow"] + spec["ask"]:
+                self.assertNotIn("publish", cmd, key)
+                self.assertNotIn("upload", cmd, key)

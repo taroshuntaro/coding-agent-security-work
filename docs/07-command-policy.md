@@ -41,6 +41,7 @@
 - `aws`、`az`、`gcloud` の変更操作
 - 本番DBクライアント
 - デプロイコマンド
+- パッケージレジストリへの公開（`npm publish`、`gradle publish`、`twine upload` 等）
 - シークレットの表示
 - Dockerソケット経由のホスト操作
 - 権限昇格、`sudo`
