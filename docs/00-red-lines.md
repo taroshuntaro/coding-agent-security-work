@@ -22,6 +22,7 @@
 
 - Codexの `:danger-full-access` ／ `approval_policy = "never"`、Claude Codeの `bypassPermissions` ／ `--dangerously-skip-permissions` を、通常の有人開発の既定値にしない。
 - これらは、コンテナやVM内であっても、bind mountされたワークスペース・コンテナ内資格情報・許可済みネットワーク先へ到達できる。
+- Claude Codeの `auto` mode（分類器）やCodexのauto-review（Guardian）はbypassとは異なるが、隔離境界でもない。採用しても、deny・サンドボックス・外側境界の代わりにはならない（[11.10](11-claude-code.md)・[10.7](10-codex.md)）。
 
 ## R4. エージェントの変更は人間がレビューしてから統合する
 
@@ -32,7 +33,7 @@
 `.env`の読み取り、ワークスペース外書き込み、任意通信、未承認MCP、`git push`などが**実際に拒否される**ことを、導入時と製品更新時に検証する（[15 受入テスト](15-acceptance-tests.md)）。設定キーを記述しただけで統制が効いたとみなさない。
 
 > [!WARNING]
-> 設定キーは、製品バージョンによっては記述しても効かないことがある。たとえばClaude Codeの `disableBypassPermissionsMode` は特定バージョンで無効だった実例があり、同Issueは修正されないままcloseされている（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)、closed as not planned・2026-08-04 確認）。**設定の存在と実効性は別物である。**
+> 設定キーは、製品バージョンによっては記述しても効かないことがある。たとえばClaude Codeの `disableBypassPermissionsMode` は特定バージョンで無効だった実例があり、同Issueは修正されないままcloseされている（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)、closed as not planned・2026-09-21 再確認）。また `strictAllowlist` のように、**置くファイル（user / project / managed）によって無視される**キーもある（[11.4](11-claude-code.md)）。**設定の存在と実効性は別物である。**
 
 ## R6. リポジトリ内の設定・指示を信頼済みポリシーとみなさない
 

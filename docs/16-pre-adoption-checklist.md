@@ -35,6 +35,9 @@
 - [ ] 読み取り・書き込み範囲を定義したか
 - [ ] ワークスペース外をdenyしたか
 - [ ] full access・bypassを管理的に禁止したか（[00 R3](00-red-lines.md)）
+- [ ] 開始時の権限モードを明示したか（Claude Code は Pro/Max/Team で auto mode が組み込み既定。[11.2](11-claude-code.md)）
+- [ ] 自動承認レビュー（Claude Code auto mode・Codex auto-review）を採用するか決め、採用する場合も隔離境界とみなしていないか（[11.10](11-claude-code.md)・[10.7](10-codex.md)）
+- [ ] user / managed でしか効かないキー（`strictAllowlist` 等）をリポジトリ設定に置いて「設定済み」としていないか（[11.4](11-claude-code.md)）
 - [ ] 自動許可・都度確認・拒否コマンドを定義したか
 - [ ] 設定をユーザーやリポジトリから解除できないか
 - [ ] 管理設定の適用状態を確認する手順があるか
@@ -43,7 +46,7 @@
 ## 16.4 ネットワーク
 
 - [ ] モデル通信とコマンド通信を分けているか
-- [ ] Codexの`disabled` / `cached` / `live`と、Claude Codeの`WebSearch` / `WebFetch`の方針を分けて決めたか
+- [ ] Codexの`disabled` / `cached` / `indexed` / `live`と、Claude Codeの`WebSearch` / `WebFetch`の方針を分けて決めたか
 - [ ] 外向き通信はdeny by defaultか
 - [ ] 必要ドメインを棚卸ししたか
 - [ ] 本番API・DB・管理画面への到達を防いだか
@@ -69,6 +72,8 @@
 - [ ] 指示・拡張ファイル（`CLAUDE.md`・`.claude/rules/`・スキル・サブエージェント定義・出力スタイル）をコードレビュー対象にしたか（[2.7](02-terms-and-control-layers.md)・[11.9](11-claude-code.md)）
 - [ ] 出力スタイル／システムプロンプト追記で既定の安全指示を上書きしていないか
 - [ ] サブエージェント経由のツール実行も権限・サンドボックス・外側境界で限定されることを受入テストで確認したか
+- [ ] セッション間メッセージ・Remote Control・バックグラウンドエージェントの方針を決めたか（[11.11](11-claude-code.md)）
+- [ ] HTTP Hooks・プラグインマーケットプレイスの許可リストを決めたか（[13](13-mcp-plugins-hooks.md)）
 
 ## 16.7 開発プロセス
 

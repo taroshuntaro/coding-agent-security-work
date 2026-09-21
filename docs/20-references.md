@@ -20,6 +20,8 @@
 - [Configuration reference – Codex](https://developers.openai.com/codex/config-reference)
 - [Model Context Protocol – Codex](https://developers.openai.com/codex/mcp)
 - [Admin setup – Codex](https://developers.openai.com/codex/enterprise/admin-setup)
+- [Auto-review – Codex](https://developers.openai.com/codex/concepts/sandboxing/auto-review)
+- [Releases – openai/codex (GitHub)](https://github.com/openai/codex/releases)
 
 ## Anthropic / Claude Code
 
@@ -33,6 +35,13 @@
 - [Server-managed settings – Claude Code](https://code.claude.com/docs/en/server-managed-settings)
 - [Development containers – Claude Code](https://code.claude.com/docs/en/devcontainer)
 - [Set up Claude Code for your organization](https://code.claude.com/docs/en/admin-setup)
+- [All settings（settings reference） – Claude Code](https://code.claude.com/docs/en/settings-reference)
+- [Deploy managed settings – Claude Code](https://code.claude.com/docs/en/managed-settings)
+- [Configure auto mode – Claude Code](https://code.claude.com/docs/en/auto-mode-config)
+- [Hooks – Claude Code](https://code.claude.com/docs/en/hooks)
+- [Cross-session messaging – Claude Code](https://code.claude.com/docs/en/cross-session-messaging)
+- [CLI reference – Claude Code](https://code.claude.com/docs/en/cli-reference)
+- [CHANGELOG – Claude Code (GitHub)](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)
 
 ## 一般的なセキュリティ指針
 

@@ -5,7 +5,7 @@
 設定ファイルを配布しただけで完了とせず、対象OS・製品バージョン・実行形態ごとにテストする（[00 R5](00-red-lines.md)）。テスト用のダミー値と隔離環境を使用し、本物のシークレットや本番サービスを使わない。
 
 > [!IMPORTANT]
-> **「設定したのに効かない」は理論ではなく実際に起きている。** たとえばClaude Codeの `disableBypassPermissionsMode` は、managed-settings.jsonに記述しても特定バージョンで無効だった実例があり、同Issueは修正されないままcloseされている（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)、closed as not planned・2026-08-04 確認）。`autoAllowBashIfSandboxed` にもシェル展開やサンドボックス無効化コマンドによるバイパス報告がある（[#29016](https://github.com/anthropics/claude-code/issues/29016)、[#43713](https://github.com/anthropics/claude-code/issues/43713)）。だからこそ、設定の**存在**ではなく**実拒否**を確認する。
+> **「設定したのに効かない」は理論ではなく実際に起きている。** たとえばClaude Codeの `disableBypassPermissionsMode` は、managed-settings.jsonに記述しても特定バージョンで無効だった実例があり、同Issueは修正されないままcloseされている（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)、closed as not planned・2026-08-04 確認）。`autoAllowBashIfSandboxed` にもサンドボックス無効化コマンドの自動承認によるバイパス報告がある（[#29016](https://github.com/anthropics/claude-code/issues/29016)、closed・修正バージョン未特定。[#43713](https://github.com/anthropics/claude-code/issues/43713) は過剰プロンプトの別件で closed）。さらに `strictAllowlist` のように**置く場所（user / project / managed）によって無視される**キーもある（[11.4](11-claude-code.md)）。だからこそ、設定の**存在**ではなく**実拒否**を確認する。
 
 ## 15.1 テストマトリクス
 
@@ -27,6 +27,11 @@
 | 製品アップデート後 | 同じテスト結果が維持される |
 | `requiredMinimumVersion` を設定したとき、それ未満のクライアントで起動が拒否されること（チーム系 L3+） | 拒否 |
 | プロジェクト設定で `denyRead:["~/"]＋allowRead:["."]` を用いた場合に、`~/.ssh` 等が読めず、プロジェクト内ファイルは読めること（堅牢パターン採用時） | `~/.ssh` は拒否・プロジェクト内は許可 |
+| `strictAllowlist` を user / managed 設定に置いたとき、許可リスト外ホストへのサンドボックス内通信が**確認なしで拒否**されること（プロジェクト設定だけに置いた状態では確認プロンプトに落ちることも併せて確認） | 拒否 |
+| Pro/Max/Team プランで、`permissions.defaultMode` の指定どおりの開始モードになること（ターミナル・VS Code 拡張の両方。管理設定で `disableAutoMode` を置いた場合は auto mode を選択できないこと） | 指定モードで開始・auto は選択不可 |
+| `permissions.blockReadsOutsideWorkingDirectories` 採用時に、作業ディレクトリ外（ホーム配下）の Read/Grep/Glob と `cat ~/.ssh/...` が拒否または確認されること | 拒否または確認 |
+| `crossSessionInbound: "refuse"` のとき、他セッションからの `SendMessage` が届かないこと（採用時） | 拒否 |
+| Codex auto-review（Guardian）採用時、`.env` 読み取り・`git push`・ワークスペース外書き込みの escalation が自動承認されないこと | 拒否または人間の承認 |
 
 ## 15.2 記録
 
