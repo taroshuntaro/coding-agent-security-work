@@ -51,10 +51,12 @@ class TestBuildClaude(unittest.TestCase):
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
         self.assertIn("Bash(git commit *)", m["permissions"]["ask"])
 
-    def test_settings_network_strict_allowlist(self):
-        # docs/11 11.4: 許可リスト外ホストは確認でなく拒否（v2.1.219 未満では無視）
+    def test_settings_network_omits_strict_allowlist(self):
+        # docs/11 11.4: strictAllowlist は user/managed/--settings でのみ有効で、
+        # リポジトリの .claude/settings.json に置いても効かない（2026-09-21 確認）。
+        # 効かないキーを生成すると「設定した」と誤認させるため出力しない。
         s = build_claude.build_settings("L2", ["npm"], ["github.com"], [])
-        self.assertIs(s["sandbox"]["network"]["strictAllowlist"], True)
+        self.assertNotIn("strictAllowlist", s["sandbox"]["network"])
 
     def test_managed_network_strict_allowlist(self):
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
@@ -65,3 +67,9 @@ class TestBuildClaude(unittest.TestCase):
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
         self.assertIn("WebSearch", m["permissions"]["deny"])
         self.assertNotIn("WebSearch", m["permissions"]["ask"])
+
+    def test_managed_uses_enable_artifact_false(self):
+        # docs/11 11.5: disableArtifact は deprecated。enableArtifact: false を使う
+        m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
+        self.assertIs(m["enableArtifact"], False)
+        self.assertNotIn("disableArtifact", m)

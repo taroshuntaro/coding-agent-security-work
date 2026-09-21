@@ -247,3 +247,27 @@ class TestCompleteness(unittest.TestCase):
                 products=["claude"], level="L2", plan="personal", use_container=False))
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 0, msgs)
+
+
+class TestSelfcheckProjectScopeKeys(unittest.TestCase):
+    def test_strict_allowlist_in_project_settings_warns(self):
+        # strictAllowlist は project settings では無効（docs/11 11.4）。FAIL ではなく WARN
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "claude-code/.claude/settings.json", json.dumps({
+                "permissions": {"deny": ["Read(./.env)", "Bash(git push *)", "Bash(sudo *)"]},
+                "sandbox": {"autoAllowBashIfSandboxed": False,
+                            "network": {"strictAllowlist": True}},
+            }))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0)
+            self.assertTrue(any(m.startswith("WARN") and "strictAllowlist" in m for m in msgs))
+
+    def test_strict_allowlist_in_managed_settings_no_warn(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "claude-code/managed-settings.json", json.dumps({
+                "permissions": {"disableBypassPermissionsMode": "disable"},
+                "sandbox": {"network": {"strictAllowlist": True}},
+            }))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0)
+            self.assertFalse(any("strictAllowlist" in m for m in msgs))

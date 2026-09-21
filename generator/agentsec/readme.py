@@ -33,6 +33,14 @@ def apply_steps(file_keys):
     steps = []
     if "claude-code/.claude/settings.json" in file_keys:
         steps.append("- Claude Code: `claude-code/.claude/settings.json` をリポジトリへ配置")
+        steps.append("- Claude Code 補足: `sandbox.network.strictAllowlist`（許可リスト外ホストを"
+                     "確認なしで拒否）は user / managed 設定でのみ有効で、リポジトリの "
+                     "`.claude/settings.json` では無視される。個人系は各自の "
+                     "`~/.claude/settings.json` に `\"sandbox\": {\"network\": "
+                     "{\"strictAllowlist\": true}}` を追加し、チーム系は組織の管理設定で"
+                     "固定する（docs/11 11.4）。また Pro/Max/Team プランでは auto mode が"
+                     "既定の開始モードのため、本設定の `defaultMode` がそれを上書きすること"
+                     "（VS Code 拡張はプロジェクト設定を読まない）を受入テストで確認する")
     if "claude-code/managed-settings.json" in file_keys:
         steps.append("- Claude Code 管理設定: `claude-code/managed-settings.json` を"
                      "リポジトリ外の管理パスへ配置")

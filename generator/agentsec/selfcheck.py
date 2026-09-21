@@ -25,6 +25,17 @@ def _check_claude_settings(path, msgs):
     sb = data.get("sandbox", {})
     if sb.get("autoAllowBashIfSandboxed", False):
         msgs.append(f"FAIL {path}: autoAllowBashIfSandboxed が true です (11.4)")
+    # user / managed / --settings でのみ有効なキー。project settings に置いても無視される
+    # ため「設定したのに効かない」を静的に警告する（docs/11 11.4・付録C）。
+    if "strictAllowlist" in sb.get("network", {}):
+        msgs.append(f"WARN {path}: sandbox.network.strictAllowlist は project settings では"
+                    "無効です。~/.claude/settings.json か managed-settings.json に置く (11.4)")
+    if "tlsTerminate" in sb.get("network", {}):
+        msgs.append(f"WARN {path}: sandbox.network.tlsTerminate は project settings では"
+                    "無効です (11.6)")
+    if "disabled" in sb.get("filesystem", {}):
+        msgs.append(f"WARN {path}: sandbox.filesystem.disabled は project settings では"
+                    "無効です (11.8)")
 
 
 def _check_managed(path, msgs):

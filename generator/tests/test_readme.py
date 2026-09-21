@@ -15,6 +15,13 @@ class TestReadme(unittest.TestCase):
         text = readme.apply_steps(keys)
         self.assertNotIn("managed-settings.json", text)
 
+    def test_apply_steps_note_user_scope_keys_for_claude(self):
+        # strictAllowlist 等は project settings で効かないため user settings への配置を案内
+        keys = {"claude-code/.claude/settings.json"}
+        text = readme.apply_steps(keys)
+        self.assertIn("strictAllowlist", text)
+        self.assertIn("~/.claude/settings.json", text)
+
     def test_apply_steps_include_managed_when_present(self):
         keys = {"claude-code/.claude/settings.json", "claude-code/managed-settings.json"}
         text = readme.apply_steps(keys)
