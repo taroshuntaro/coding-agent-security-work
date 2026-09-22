@@ -38,9 +38,13 @@ def apply_steps(file_keys):
                      "`.claude/settings.json` では無視される。個人系は各自の "
                      "`~/.claude/settings.json` に `\"sandbox\": {\"network\": "
                      "{\"strictAllowlist\": true}}` を追加し、チーム系は組織の管理設定で"
-                     "固定する（docs/11 11.4）。また Pro/Max/Team プランでは auto mode が"
-                     "既定の開始モードのため、本設定の `defaultMode` がそれを上書きすること"
-                     "（VS Code 拡張はプロジェクト設定を読まない）を受入テストで確認する")
+                     "固定する（docs/11 11.4）")
+        steps.append("- Claude Code 補足: Pro / Max / Team プランでは auto mode が組み込み既定の"
+                     "開始モードになっている。**VS Code 拡張はプロジェクト設定を開始モードの決定に"
+                     "使わない**ため、本設定の `permissions.defaultMode` と同じ値を "
+                     "`~/.claude/settings.json`（チーム系は組織の管理設定）にも置く。"
+                     "置かないと拡張から起動したセッションが auto mode で始まる。"
+                     "反映は受入テストで確認する（docs/11 11.2・11.10）")
     if "claude-code/managed-settings.json" in file_keys:
         steps.append("- Claude Code 管理設定: `claude-code/managed-settings.json` を"
                      "リポジトリ外の管理パスへ配置")

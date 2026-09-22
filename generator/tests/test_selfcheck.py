@@ -271,3 +271,40 @@ class TestSelfcheckProjectScopeKeys(unittest.TestCase):
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 0)
             self.assertFalse(any("strictAllowlist" in m for m in msgs))
+
+
+class TestSelfcheckAutoAllowDefault(unittest.TestCase):
+    """autoAllowBashIfSandboxed の既定は true（docs/11 11.4・付録C）。
+    未指定は「明示 false」と同義ではないため FAIL とする。"""
+
+    def _settings(self, sandbox):
+        return json.dumps({
+            "permissions": {"deny": ["Read(./.env)", "Bash(git push *)", "Bash(sudo *)"]},
+            "sandbox": sandbox,
+        })
+
+    def test_missing_auto_allow_with_sandbox_enabled_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "claude-code/.claude/settings.json",
+                   self._settings({"enabled": True}))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("autoAllowBashIfSandboxed" in m and "未指定" in m
+                                for m in msgs))
+
+    def test_explicit_false_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "claude-code/.claude/settings.json",
+                   self._settings({"enabled": True, "autoAllowBashIfSandboxed": False}))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0)
+
+    def test_missing_auto_allow_in_managed_settings_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "claude-code/managed-settings.json", json.dumps({
+                "permissions": {"disableBypassPermissionsMode": "disable"},
+                "sandbox": {"enabled": True},
+            }))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("autoAllowBashIfSandboxed" in m for m in msgs))

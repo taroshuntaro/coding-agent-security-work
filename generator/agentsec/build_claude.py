@@ -42,9 +42,12 @@ def build_managed_settings(level, stacks_keys, allowed_domains, extra_deny_paths
     cmds = stacks.commands_for(stacks_keys)
     settings = {
         "$schema": SCHEMA,
-        # disableArtifact は deprecated（v2.1.242 以降は enableArtifact: false が正）。
-        # false はどのスコープからも再有効化できないロックとして働く（docs/11 11.5）。
+        # Artifact ロックは新旧2キーを併記する（docs/11 11.5）。
+        # enableArtifact は v2.1.196 以降でのみ認識されるため、それ未満の
+        # クライアントではロックが外れる。公式が同等と認める旧キー
+        # disableArtifact: true を残し、どのバージョンでも無効化されるようにする。
         "enableArtifact": False,
+        "disableArtifact": True,
         "disableRemoteControl": True,
         "disableClaudeAiConnectors": True,
         "autoMemoryEnabled": False,

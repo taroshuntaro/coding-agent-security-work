@@ -68,8 +68,10 @@ class TestBuildClaude(unittest.TestCase):
         self.assertIn("WebSearch", m["permissions"]["deny"])
         self.assertNotIn("WebSearch", m["permissions"]["ask"])
 
-    def test_managed_uses_enable_artifact_false(self):
-        # docs/11 11.5: disableArtifact は deprecated。enableArtifact: false を使う
+    def test_managed_emits_both_artifact_keys(self):
+        # docs/11 11.5: enableArtifact は v2.1.196 以降でのみ認識される。
+        # それ未満のクライアントでもロックが外れないよう、公式が同等と認める
+        # 旧キー disableArtifact: true も併記する（新キーが正・旧キーは後方互換）。
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
         self.assertIs(m["enableArtifact"], False)
-        self.assertNotIn("disableArtifact", m)
+        self.assertIs(m["disableArtifact"], True)

@@ -22,6 +22,18 @@ class TestReadme(unittest.TestCase):
         self.assertIn("strictAllowlist", text)
         self.assertIn("~/.claude/settings.json", text)
 
+    def test_apply_steps_route_default_mode_to_user_scope(self):
+        # VS Code 拡張はプロジェクト設定を開始モードの決定に使わないため、
+        # defaultMode も ~/.claude/settings.json へ置くよう案内する（docs/11 11.2）。
+        # 「確認せよ」だけでは、拡張利用時に auto mode で始まる穴が残る。
+        text = readme.apply_steps({"claude-code/.claude/settings.json"})
+        default_mode_step = [ln for ln in text.splitlines() if "defaultMode" in ln]
+        self.assertEqual(len(default_mode_step), 1)
+        step = default_mode_step[0]
+        self.assertIn("VS Code", step)
+        self.assertIn("~/.claude/settings.json", step)
+        self.assertIn("にも置く", step)
+
     def test_apply_steps_include_managed_when_present(self):
         keys = {"claude-code/.claude/settings.json", "claude-code/managed-settings.json"}
         text = readme.apply_steps(keys)

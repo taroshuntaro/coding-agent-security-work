@@ -33,6 +33,9 @@
 | `crossSessionInbound: "refuse"` のとき、他セッションからの `SendMessage` が届かないこと（採用時） | 拒否 |
 | Codex auto-review（Guardian）採用時、`.env` 読み取り・`git push`・ワークスペース外書き込みの escalation が自動承認されないこと | 拒否または人間の承認 |
 
+> [!NOTE]
+> 生成ツール（`generator/`）は、本表の追加行のうち製品別の観点を `acceptance/checklist.md` へ出力する（Claude Code 向け4行・Codex 向け1行）。本表を更新したときは生成ツール側（`agentsec/checklist.py`）も合わせて更新する。
+
 ## 15.2 記録
 
 検証結果は、製品バージョン、OS、設定ファイルのハッシュ、実施日、実施者とともに記録する。プラン（個人系／チーム・ビジネス系）と、その案件のレベルも併記する。
