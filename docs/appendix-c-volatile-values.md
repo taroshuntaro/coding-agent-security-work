@@ -4,7 +4,7 @@
 
 本文中の「変動しやすい具体値」をここに集約する。製品更新時は**本表だけを洗い、確認日を更新**すればよい（[17.2](17-periodic-review.md)）。本文の設定例コードブロックは各製品章に残してある。
 
-- **基準確認日**: 2026-09-21（Claude Code。CHANGELOG は v2.1.278 まで確認）／ 2026-08-04（Codex 設定リファレンス。下記 C.1 の注記参照）
+- **基準確認日**: 2026-09-21（Claude Code。CHANGELOG は v2.1.278 まで確認）／ 2026-09-23（Codex。公式ドキュメントとリリースノートは 0.156.0 まで確認）
 - **検証状態**の凡例: ✅ 一次資料（公式ドキュメント／GitHub）で確認済み ／ ⚠️ 本ガイド作成時点で未再検証（旧版記述を引き継ぎ。導入時に要確認）
 
 ## C.1 Codex
@@ -12,29 +12,34 @@
 > [!NOTE]
 > `developers.openai.com/codex` 配下のドキュメントは `learn.chatgpt.com/docs` 配下へ恒久移転している（308リダイレクトを 2026-08-04 に確認）。旧URLもリダイレクトで到達できる。本表の出典は移転先を確認できたものから新URLへ更新している。
 >
-> **2026-09-21 の再確認について**: 作業環境から `learn.chatgpt.com`・`developers.openai.com` へ到達できなかったため、設定リファレンス・managed-configuration 由来の値は **2026-08-04 確認のまま**とし、GitHub の `openai/codex` リリースノート（0.143.0〜0.155.1）と `docs/config.md` で確認できた事項だけを 2026-09-21 付で追記した。次回レビュー（[17.2](17-periodic-review.md)）で公式リファレンスに対する再検証を行うこと。
+> **2026-09-23 の再検証について**: 2026-09-21 には作業環境から公式ドキュメントへ到達できず、設定リファレンス由来の値を 2026-08-04 確認のまま据え置いていた。2026-09-23 に公式ドキュメント（config-reference・managed-configuration・permissions・agent-approvals-security・auto-review・cloud environments・agent internet access）を取得して全行を再検証した。その結果、**ドメイン許可リストはプロキシ有効化なしでは適用されない**こと、`approval_policy = "untrusted"` の廃止、auto-review の既定値と管理キーが判明し、本表と[10章](10-codex.md)・生成ツールを修正した。
 
 | 項目 | 値 | 検証状態 | 確認日 | 出典 |
 |---|---|---|---|---|
-| `web_search` のモード | `disabled` / `cached` / `indexed` / `live` の4値（旧boolean併存）。`indexed` は検索インデックス承認URLに限る外部取得 | ✅ | 2026-08-04 | [config-reference](https://learn.chatgpt.com/docs/config-file/config-reference) |
-| `web_search` 既定値 | `cached`。full accessサンドボックス時は `live` | ✅ | 2026-08-04 | 同上 |
+| `web_search` のモード | `disabled` / `cached` / `indexed` / `live` の4値（旧boolean併存）。`indexed` は検索インデックス承認URLに限る外部取得 | ✅ | 2026-09-23 | [config-reference](https://learn.chatgpt.com/docs/config-file/config-reference) |
+| `web_search` 既定値 | `cached`。full accessサンドボックス時は `live` | ✅ | 2026-09-23 | 同上 |
 | `web_search` のサーバー承認URL限定検索 | 0.142.0 で告知されたのち、`indexed` として値トークン公開済み | ✅ | 2026-08-04 | 同上 |
-| `approval_policy` 値 | `untrusted` / `on-request` / `never`。加えて granular テーブル形式（`sandbox_approval` / `rules` / `mcp_elicitations` / `request_permissions` / `skill_approval`）が追加（導入バージョン未確認） | ✅ | 2026-08-04 | 同上 |
-| `sandbox_mode` 値 | `read-only` / `workspace-write` / `danger-full-access` | ✅ | 2026-06-20 | 同上 |
-| `glob_scan_max_depth` 制約 | 設定時は最低1 | ✅ | 2026-06-20 | 同上 |
-| filesystem の `:root` トークン | **現行 config-reference に掲載なし**（特殊トークンは `:minimal` / `:workspace_roots` のみ記載。削除か改称かは未確認）。`:root` deny を使う設定は対象バージョンでの有効性を導入時に確認 | ⚠️ | 2026-08-04 | [config-reference](https://learn.chatgpt.com/docs/config-file/config-reference) |
-| managed requirements の取得失敗時 | 公式記載は**fail-closed方向へ更新**: 有効なキャッシュがあればキャッシュを使用、キャッシュも無く取得失敗ならエラー（黙って非適用起動しない）。旧記載は fail-open。適用バージョン未確認のため実挙動は受入テストで確認 | ✅ | 2026-08-04 | [managed-configuration](https://learn.chatgpt.com/docs/enterprise/managed-configuration) |
-| `requirements.toml` 主要キー | `allowed_approval_policies` / `allowed_web_search_modes` / `allowed_sandbox_modes` / `allowed_permission_profiles` / `default_permissions` / `allow_remote_control` / `allow_appshots` / `allow_managed_hooks_only` / `[rules].prefix_rules`。追加: `[mcp_servers]`（identity allowlist。空テーブルで全MCP無効）/ `allowed_approvals_reviewers` / `enforce_residency` / `features.plugins` / `[computer_use].allow_locked_computer_use` / `[marketplaces].restrict_to_allowed_sources` | ✅ | 2026-08-04 | 同上 |
-| managed requirements 対応バージョン | permission profile 許可リストは 0.138.0 以降（0.137.0 以前は `allowed_permission_profiles`・managed `default_permissions` を無視）。全機能共通の単一最低バージョン記載はなし | ✅ | 2026-08-04 | 同上 |
-| Codex web 環境キャッシュ保持時間 | 最大12時間。Business・Enterpriseでは環境にアクセスできる全ユーザーで共有 | ✅ | 2026-08-04 | [cloud environment](https://learn.chatgpt.com/docs/environments/cloud-environment) |
-| Secrets の扱い（Codex web） | セットアップスクリプトでのみ利用可。エージェントフェーズ開始前に削除 | ✅ | 2026-08-04 | 同上 |
-| セッション履歴無効化 | `history.persistence = "save-all" \| "none"`・`history.max_bytes` | ✅ | 2026-08-04 | [config-reference](https://learn.chatgpt.com/docs/config-file/config-reference) |
-| 最新安定版 | 0.155.1（2026-09-18）。以降は 0.156.0 の alpha のみ | ✅ | 2026-09-21 | [releases](https://github.com/openai/codex/releases) |
-| auto-review（Guardian） | サンドボックス境界の escalation を別エージェントが審査する自動承認レビュー。公式 docs は `concepts/sandboxing/auto-review`（到達不能のため内容未再検証）。`approval_policy = "on-request"` でも動作し、無効化キーが見当たらないとの報告（Issue #43287、open）。0.153.0: Full Access 時は確認のみの操作で審査を省略。0.151.0: 権限状態変更後の古い判定で承認しない修正 | ⚠️ | 2026-09-21 | [auto-review](https://developers.openai.com/codex/concepts/sandboxing/auto-review) / [#43287](https://github.com/openai/codex/issues/43287) / [releases](https://github.com/openai/codex/releases) |
-| 信頼済みでないプロジェクトの `AGENTS.md` | 0.150.0 以降、プロジェクト直下の `AGENTS.md` 指示を読み込まない。managed deny-read が権限変更後も維持される修正も同版 | ✅ | 2026-09-21 | [releases](https://github.com/openai/codex/releases) |
-| サンドボックス関連の修正 | 0.148.0: deny／読取不能パスで fail-safe。0.151.0: `/cd` でサンドボックス制約を緩められない修正。0.152.0: Windows サンドボックス実行の修正、クラウドタスク要求で未信頼バックエンド URL を拒否。0.155.0: 制限付き WSL サンドボックスからの Windows プロセス経由脱出を遮断 | ✅ | 2026-09-21 | 同上 |
-| Hooks の拡張 | 0.148.0: 非同期実行・MCP ツール呼び出しに対応。0.150.0: `Interrupt` Hook 追加。`allow_managed_hooks_only = true` は `requirements.toml` でのみ有効（`config.toml` では無効） | ✅ | 2026-09-21 | [releases](https://github.com/openai/codex/releases) / [docs/config.md](https://github.com/openai/codex/blob/main/docs/config.md) |
-| プラグイン・マーケットプレイス | 0.146.0〜0.147.0: Agent Plugins マニフェスト・追加マーケットプレイス・ワークスペースからの公開。0.153.0: リモートマーケットプレイスからの CLI インストール。managed 側は `[marketplaces].restrict_to_allowed_sources`・`features.plugins` で制限 | ✅ | 2026-09-21 | [releases](https://github.com/openai/codex/releases) |
+| `approval_policy` 値 | `on-request` / `never` / granular テーブル形式（`sandbox_approval` / `rules` / `mcp_elicitations` / `request_permissions` / `skill_approval`）。**`untrusted` は廃止**（設定するとクライアントが起動しないことがある）、`on-failure` は deprecated。厳格な承認はプロジェクトの `trust_level = "untrusted"` で得る。`allowed_approval_policies` の `untrusted` はこの派生ポリシーを許可する値として引き続き有効 | ✅ | 2026-09-23 | 同上 / [agent-approvals-security](https://learn.chatgpt.com/docs/agent-approvals-security) |
+| `sandbox_mode` 値 | `read-only` / `workspace-write` / `danger-full-access`。permission profile（`default_permissions`）と併用不可で、`sandbox_mode` がどこかにあると旧方式が優先（管理側 `allowed_permission_profiles` があれば profile を使う） | ✅ | 2026-09-23 | 同上 / [permissions](https://learn.chatgpt.com/docs/permissions) |
+| `glob_scan_max_depth` 制約 | 設定時は最低1（Linux・WSL・ネイティブ Windows で deny-read glob の事前展開に使う） | ✅ | 2026-09-23 | 同上 |
+| filesystem の特殊パス | `:root`（ルート）/ `:minimal` / `:workspace_roots` / `:tmpdir` / `:slash_tmp`、絶対パス、`~/`。`extends = ":workspace"`＋`":root" = "deny"`＋`":minimal" = "read"` は公式の例と同じ構成。同一パスでは `deny` > `write` > `read`、より具体的なパスが優先 | ✅ | 2026-09-23 | [permissions](https://learn.chatgpt.com/docs/permissions) |
+| コマンドネットワークのドメイン許可リスト | `permissions.<name>.network.enabled = true` はプロキシを起動しない。**`features.network_proxy = true`（または管理側 `[experimental_network]` の `enabled = true`）が無いと無制限の直接通信**になり、ドメイン規則は適用されない。プロキシ有効時は allow が無ければ外部宛てを遮断、deny が優先、ローカル／プライベート宛ては既定で遮断。Web検索・Apps・MCP・ブラウザ・Codex cloud・本体通信は対象外 | ✅ | 2026-09-23 | 同上 / [agent-approvals-security](https://learn.chatgpt.com/docs/agent-approvals-security) |
+| `[experimental_network]`（requirements） | 管理側からプロキシを起動するネットワーク要件。`enabled` / `domains` / `managed_allowed_domains_only`（管理者の allow のみ有効）等。**experimental で変更され得る。ネイティブ Windows の対応は限定的**。サンドボックスがネットワークを無効にしているときに通信を許可はしない | ✅ | 2026-09-23 | [managed-configuration](https://learn.chatgpt.com/docs/enterprise/managed-configuration) |
+| 書き込み可能ルート内の保護パス | `.git`（ポインタファイルの参照先を含む）・`.agents`・`.codex` を再帰的に読み取り専用に保護（`workspace-write`／`:workspace`） | ✅ | 2026-09-23 | [agent-approvals-security](https://learn.chatgpt.com/docs/agent-approvals-security) |
+| managed requirements の取得失敗時 | 公式記載は**fail-closed方向へ更新**: 有効なキャッシュがあればキャッシュを使用、キャッシュも無く取得失敗ならエラー（黙って非適用起動しない）。旧記載は fail-open。適用バージョン未確認のため実挙動は受入テストで確認 | ✅ | 2026-09-23 | [managed-configuration](https://learn.chatgpt.com/docs/enterprise/managed-configuration) |
+| `requirements.toml` 主要キー | `allowed_approval_policies` / `allowed_web_search_modes` / `allowed_sandbox_modes` / `allowed_permission_profiles` / `default_permissions` / `allow_remote_control` / `allow_appshots` / `allow_managed_hooks_only` / `[rules].prefix_rules`。追加: `[mcp_servers]`（identity allowlist。空テーブルで全MCP無効）/ `allowed_approvals_reviewers` / `enforce_residency` / `features.plugins` / `[computer_use].allow_locked_computer_use` / `[marketplaces].restrict_to_allowed_sources`。2026-09-23 追加確認: `guardian_policy_config` / `features.guardian_approval` / `[experimental_network]` / `allow_browser_and_computer_use` / `[browser_use]`（`disable_auto_review` 等）/ `[plugins.<p>.mcp_servers]` / `[apps]` / `remote_sandbox_config`。認証系の `allowed_login_methods` / `allowed_chatgpt_workspaces` / `cli_auth_credentials_store` / `chatgpt_base_url` は**ローカルの system requirements か macOS MDM でのみ有効**（クラウド配信では無視）。`[mcp_servers]` の `identity.command` 文字列形式は引数・`cwd`・環境変数を照合しない | ✅ | 2026-09-23 | 同上 |
+| 管理 `deny_read` | 絶対パス（glob可）か `~` 始まりで書く（`./` 始まりは不可）。利用者は緩和できず、存在すると full access を拒否する。**ネイティブ Windows ではシェルのサブプロセスによる読み取りには効かない**（直接のファイルツールのみ） | ✅ | 2026-09-23 | 同上 |
+| managed requirements 対応バージョン | permission profile 許可リストは 0.138.0 以降（0.137.0 以前は `allowed_permission_profiles`・managed `default_permissions` を無視）。全機能共通の単一最低バージョン記載はなし | ✅ | 2026-09-23 | 同上 |
+| Codex web 環境キャッシュ保持時間 | 最大12時間。Business・Enterpriseでは環境にアクセスできる全ユーザーで共有 | ✅ | 2026-09-23 | [cloud environment](https://learn.chatgpt.com/docs/environments/cloud-environment) |
+| Secrets の扱い（Codex web） | セットアップスクリプトでのみ利用可。エージェントフェーズ開始前に削除 | ✅ | 2026-09-23 | 同上 |
+| Codex web のエージェントフェーズ通信 | 既定オフ。オンにする場合はドメイン許可リスト（None / Common dependencies / All）と許可 HTTP メソッド（`GET`・`HEAD`・`OPTIONS` に限定可）を環境ごとに設定 | ✅ | 2026-09-23 | [internet access](https://learn.chatgpt.com/docs/cloud/internet-access) |
+| セッション履歴無効化 | `history.persistence = "save-all" \| "none"`・`history.max_bytes` | ✅ | 2026-09-23 | [config-reference](https://learn.chatgpt.com/docs/config-file/config-reference) |
+| 最新安定版 | 0.156.0（2026-09-22） | ✅ | 2026-09-23 | [changelog](https://learn.chatgpt.com/docs/changelog) / [releases](https://github.com/openai/codex/releases) |
+| auto-review（Guardian） | 既定は `approvals_reviewer = "user"`（人間が承認）。`"auto_review"` のときだけ、もともと承認が要る操作（サンドボックス外への昇格・ブロックされた通信・書き込み可能ルート外の編集・承認が必要な MCP／App 呼び出し等）を別エージェントが審査。`on-request` か granular のときだけ動き、`never`・full access では承認要求自体が発生しない。審査の構築・実行・解析失敗は fail-closed、タイムアウトでも実行しない。現行のオープンソース実装では1ターンで3回連続または直近50件中10件の拒否でターン中断。管理側は `allowed_approvals_reviewers`・`features.guardian_approval`・`guardian_policy_config`（利用者の `[auto_review].policy` より優先）。0.153.0: Full Access 時は確認のみの操作で審査を省略。0.156.0: 未採点の権限拡大ではキャッシュ済み承認を無効化 | ✅ | 2026-09-23 | [auto-review](https://learn.chatgpt.com/docs/sandboxing/auto-review) / [agent-approvals-security](https://learn.chatgpt.com/docs/agent-approvals-security#automatic-approval-reviews) |
+| 信頼済みでないプロジェクト | `trust_level = "untrusted"` のプロジェクトは `.codex/` 配下の設定・Hooks・rules を読み込まない（公式設定リファレンス）。0.150.0 以降はプロジェクト直下の `AGENTS.md` 指示も読み込まない（リリースノートのみ。公式の AGENTS.md ガイドには記載なし）。managed deny-read が権限変更後も維持される修正も 0.150.0 | ✅ | 2026-09-23 | [config-reference](https://learn.chatgpt.com/docs/config-file/config-reference) / [releases](https://github.com/openai/codex/releases) |
+| サンドボックス関連の修正 | 0.148.0: deny／読取不能パスで fail-safe。0.151.0: `/cd` でサンドボックス制約を緩められない修正。0.152.0: Windows サンドボックス実行の修正、クラウドタスク要求で未信頼バックエンド URL を拒否。0.155.0: 制限付き WSL サンドボックスからの Windows プロセス経由脱出を遮断、Windows サンドボックスでのファイルシステムルートの read deny に関する変更。0.156.0: Windows オフラインサンドボックスで非ループバックの受信通信を遮断 | ✅ | 2026-09-23 | 同上 / [changelog](https://learn.chatgpt.com/docs/changelog) |
+| Hooks の拡張 | 0.148.0: 非同期実行・MCP ツール呼び出しに対応。0.150.0: `Interrupt` Hook 追加。`allow_managed_hooks_only = true` は `requirements.toml` でのみ有効（`config.toml` では無効）。user・project・session・plugin 由来の Hook を飛ばし、managed Hook は残す | ✅ | 2026-09-23 | [releases](https://github.com/openai/codex/releases) / [docs/config.md](https://github.com/openai/codex/blob/main/docs/config.md) |
+| プラグイン・マーケットプレイス | 0.146.0〜0.147.0: Agent Plugins マニフェスト・追加マーケットプレイス・ワークスペースからの公開。0.153.0: リモートマーケットプレイスからの CLI インストール。managed 側は `[marketplaces].restrict_to_allowed_sources`・`features.plugins` で制限（OpenAI キュレーションのカタログも許可リストに一致させる必要がある） | ✅ | 2026-09-23 | [releases](https://github.com/openai/codex/releases) |
 | MCP 承認の追加保護 | 0.153.0: 記憶した MCP ツール承認をアプリアカウント単位に限定。0.155.0: ローカル TUI での MCP 要求に Touch ID 検証（対応 Mac） | ✅ | 2026-09-21 | 同上 |
 
 ## C.2 Claude Code
@@ -100,7 +105,7 @@
 
 | 強制機能 | 個人系 | チーム・ビジネス系 | 検証状態 |
 |---|---|---|---|
-| Codex managed requirements | × | ○ | ⚠️ プラン名・適用範囲は要確認 |
+| Codex managed requirements | × | ○ | ⚠️ プラン名・適用範囲は要確認（クラウド配信の requirements は ChatGPT Business・Enterprise が対象と公式に記載。2026-09-23 確認） |
 | Claude Code managed settings | × | ○ | ⚠️ 同上 |
 | 組織監査ログ | × | ○ | ⚠️ 同上 |
 

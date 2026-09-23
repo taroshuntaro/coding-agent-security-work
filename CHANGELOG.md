@@ -15,6 +15,8 @@
 - generator: L3 以上の `managed-settings.json` に `crossSessionInbound: "refuse"` と `isolatePeerMachines: true` を出力（docs/11 11.5・11.11 と一致）。
 - generator: 生成する受入チェックリストに製品別の追加行を出力する `agentsec/checklist.py` を追加（docs/15 の追加観点を Claude Code 向け4行・Codex 向け1行として反映）。
 - generator: `selfcheck.py` が project settings 内の `strictAllowlist` / `tlsTerminate` / `filesystem.disabled`（user / managed でのみ有効なキー）を検出したとき WARN。
+- generator: `selfcheck.py` が Codex のドメイン許可リストをプロキシ無しで使う設定（config.toml で `features.network_proxy` 無し、requirements.toml で `[experimental_network]` 無し）を FAIL、絶対パスでも `~` 始まりでもない `deny_read` を WARN にする。受入チェックリストの Codex 行にプロキシ込みの実拒否確認を追加（Codex 向け2行）。
+- docs: 10.4 に `network.enabled` と `features.network_proxy` の組み合わせごとの挙動表、10.5 に `[experimental_network]` の設定例と注意、16.4・17・15 にプロキシ有効化の確認項目を追加。
 
 ### Changed
 - docs: 2026-08-04 以降の Claude Code の更新を一次資料（settings reference・sandboxing・permission modes・managed settings・server-managed settings・CHANGELOG v2.1.278 まで）で確認し反映。
@@ -24,14 +26,24 @@
   - server-managed settings は既定 fail-open で、プロバイダ環境変数や独自 `ANTHROPIC_BASE_URL` のエクスポートで取得自体がスキップされる点、管理設定ファイルの解析失敗時は起動拒否（v2.1.259 以降）となる点、サンドボックスを弱める配信設定は承認ダイアログを要する点（v2.1.251 以降）を 11.5・付録C に記載。`requiredMinimumVersion` の下限根拠としてセキュリティ修正の一覧を付録C に追加。
   - `disableArtifact` は deprecated。docs/11 11.5 と generator は `enableArtifact: false` を正としつつ、同キーを認識しない v2.1.196 未満のクライアント向けに `disableArtifact: true` を併記。
   - Issue #44642（closed, not planned）・#43713（closed）を再確認。
-- docs/10・付録C: Codex は公式リファレンス（`learn.chatgpt.com`）へ作業環境から到達できなかったため、設定リファレンス由来の値は 2026-08-04 確認のまま据え置き。GitHub リリース（0.143.0〜0.155.1）と `docs/config.md` で確認できた事項（auto-review（Guardian）、信頼済みでないプロジェクトの `AGENTS.md` 非読込、サンドボックス関連修正、Hooks の非同期・MCP 呼び出し対応、プラグインマーケットプレイス、`allow_managed_hooks_only` は `requirements.toml` でのみ有効）を追記。
-- 付録C の基準確認日を 2026-08-04 から 2026-09-21（Claude Code）に更新（Codex 設定リファレンスは 2026-08-04 のまま）。`docs/README.md` の仕様確認基準日も同様に併記へ変更。
+- docs/10・付録C: Codex は公式リファレンス（`learn.chatgpt.com`）へ作業環境から到達できなかったため、設定リファレンス由来の値は 2026-08-04 確認のまま据え置き。GitHub リリース（0.143.0〜0.155.1）と `docs/config.md` で確認できた事項（auto-review（Guardian）、信頼済みでないプロジェクトの `AGENTS.md` 非読込、サンドボックス関連修正、Hooks の非同期・MCP 呼び出し対応、プラグインマーケットプレイス、`allow_managed_hooks_only` は `requirements.toml` でのみ有効）を追記。→ 同日、下記のとおり公式ドキュメントで再検証した。
+- 付録C の基準確認日を 2026-08-04 から 2026-09-21（Claude Code）に更新（Codex 設定リファレンスは 2026-08-04 のまま）。`docs/README.md` の仕様確認基準日も同様に併記へ変更。→ 同日の再検証で Codex も 2026-09-23 に更新した（下記）。
 - docs/00 R3・R5、docs/02 2.7、docs/08 に自動承認レビュー・有効スコープ・`sandbox.credentials` の観点を追記。docs/20 に参照リンクを追加。
+- docs/10・付録C: Codex の値を公式ドキュメント（`learn.chatgpt.com` の config-reference・managed-configuration・permissions・agent-approvals-security・auto-review・cloud environments・agent internet access）で再検証し、付録C.1 の全行を 2026-09-23 付で更新（⚠️ は解消）。
+  - `approval_policy = "untrusted"` は廃止（`on-failure` は deprecated）。`allowed_approval_policies` の `untrusted` は `trust_level = "untrusted"` 由来の厳格な承認を許可する値として有効なため、10.5 と generator の値は維持し注記を追加。10.8 の避ける設定に追加。
+  - auto-review は既定 `approvals_reviewer = "user"`。管理側は `allowed_approvals_reviewers`・`features.guardian_approval`・`guardian_policy_config` で制御できる（旧記載の「無効化キーなし」を訂正）。審査失敗は fail-closed、タイムアウトでも実行しない点を記載。公式 URL の移転に合わせて docs/20 を更新。
+  - filesystem の `:root` は公式の Permissions ページに記載された特殊パスで、本ガイドの構成は公式の例と同じ（10.4 の要確認注記を差し替え）。書き込み保護パスに `.agents` を追記。
+  - 管理 `deny_read` の書式（絶対パスか `~` 始まり）と、ネイティブ Windows ではシェルのサブプロセスに効かない制約、Codex web のエージェント通信設定、追加の管理キー、最新安定版 0.156.0 を付録C に記録。
+- 付録C の基準確認日（Codex）を 2026-08-04 から 2026-09-23 に更新。`docs/README.md` の仕様確認基準日も同様。
 - generator: 生成物 README の Claude Code 適用手順を拡充。`strictAllowlist` と `defaultMode` の置き場所を、管理設定が生成物に含まれるか（チーム系かつ L3 以上）に応じて `~/.claude/settings.json` または同梱の `managed-settings.json` へ案内。
 
 ### Fixed
+- generator: Codex の `requirements.toml` の `deny_read` を絶対パスの glob（例: `/**/.env`）で出力する。管理 `deny_read` は絶対パスか `~` 始まりが公式の書式で、従来の相対 glob（`**/.env`）は公式の例にない形だった。
 - generator: 生成する project `settings.json` から `sandbox.network.strictAllowlist` を除去。同キーは user / managed / `--settings` でのみ有効で、リポジトリの `.claude/settings.json` に置いても無視される（docs/11 11.4 の設定例も同様に修正。設定の存在と実効性が一致していなかった）。
 - generator: `selfcheck.py` が `autoAllowBashIfSandboxed` 未指定を安全側とみなしていた前提を修正。既定は `true`（auto-allow）のため、`enabled` の有無に関わらず未指定を FAIL とし、`managed-settings.json` も検査対象に加えた。
+
+### Security
+- generator・docs/10: Codex のドメイン許可リストが適用されず、サンドボックス内コマンドが無制限に直接通信できる構成になっていた問題を修正。`permissions.<name>.network.enabled = true` はプロキシを起動しないため、許可ドメイン指定時は config.toml に `features.network_proxy = true`、requirements.toml に `[experimental_network]`（`managed_allowed_domains_only = true`）を出力する。`[experimental_network]` は experimental 扱いでネイティブ Windows の対応が限定的なため、受入テストでの確認を前提とする旨を生成 README と docs に明記。
 
 ## 2026-08-04
 

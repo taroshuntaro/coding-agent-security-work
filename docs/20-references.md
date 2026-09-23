@@ -20,7 +20,8 @@
 - [Configuration reference – Codex](https://developers.openai.com/codex/config-reference)
 - [Model Context Protocol – Codex](https://developers.openai.com/codex/mcp)
 - [Admin setup – Codex](https://developers.openai.com/codex/enterprise/admin-setup)
-- [Auto-review – Codex](https://developers.openai.com/codex/concepts/sandboxing/auto-review)
+- [Auto-review – Codex](https://learn.chatgpt.com/docs/sandboxing/auto-review)
+- [ChatGPT & Codex changelog](https://learn.chatgpt.com/docs/changelog)
 - [Releases – openai/codex (GitHub)](https://github.com/openai/codex/releases)
 
 ## Anthropic / Claude Code

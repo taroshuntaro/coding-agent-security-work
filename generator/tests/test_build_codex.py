@@ -70,6 +70,49 @@ class TestBuildCodex(unittest.TestCase):
         self.assertEqual(roots, {".devcontainer": "read",
                                  ".codex": "read", ".git": "read"})
 
+    def test_config_domains_enable_network_proxy(self):
+        # docs/10 10.4: network.enabled だけではドメイン規則が効かず直接通信になる。
+        # features.network_proxy = true でプロキシを起動して許可リストを強制する。
+        parsed = tomllib.loads(build_codex.build_config("L2", ["npm"], ["github.com"], []))
+        self.assertIs(parsed["features"]["network_proxy"], True)
+
+    def test_config_without_domains_has_no_network_proxy(self):
+        parsed = tomllib.loads(build_codex.build_config("L2", ["npm"], [], []))
+        self.assertNotIn("features", parsed)
+
+    def test_requirements_domains_enable_managed_network(self):
+        # docs/10 10.5: 管理側は [experimental_network] でプロキシを起動し、
+        # 管理者の allow 規則だけを有効にする。
+        parsed = tomllib.loads(build_codex.build_requirements("L3", ["github.com"], []))
+        self.assertEqual(parsed["experimental_network"], {
+            "enabled": True,
+            "managed_allowed_domains_only": True,
+            "domains": {"github.com": "allow"},
+        })
+
+    def test_requirements_without_domains_has_no_managed_network(self):
+        parsed = tomllib.loads(build_codex.build_requirements("L3", [], []))
+        self.assertNotIn("experimental_network", parsed)
+
+    def test_requirements_deny_read_uses_absolute_or_home_paths(self):
+        # managed-configuration: deny_read は絶対パスか ~ 始まり（./ 始まりは不可）
+        parsed = tomllib.loads(build_codex.build_requirements(
+            "L3", [], ["config/secret.yml", "./keys/**", "**/certs/**", "~/.gnupg", "/etc/x"]))
+        deny_read = parsed["permissions"]["filesystem"]["deny_read"]
+        for entry in deny_read:
+            self.assertTrue(entry.startswith(("/", "~")), entry)
+        for expected in ["/**/.env", "/**/.env.*", "/**/secrets/**",
+                         "/**/config/secret.yml", "/**/keys/**", "/**/certs/**",
+                         "~/.gnupg", "/etc/x", "~/.ssh"]:
+            self.assertIn(expected, deny_read)
+
+    def test_config_workspace_roots_keep_relative_globs(self):
+        # :workspace_roots 配下は各ワークスペースルート相対の glob が公式の書式
+        parsed = tomllib.loads(build_codex.build_config("L2", ["npm"], [], ["**/keys/**"]))
+        roots = parsed["permissions"]["business-workspace"]["filesystem"][":workspace_roots"]
+        self.assertEqual(roots["**/.env"], "deny")
+        self.assertEqual(roots["**/keys/**"], "deny")
+
     def test_config_l1_header_has_no_workspace_premise(self):
         # L1 は :read-only であり extends = ":workspace" を前提としない
         toml = build_codex.build_config("L1", ["npm"], ["github.com"], [])

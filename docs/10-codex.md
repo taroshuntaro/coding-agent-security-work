@@ -38,7 +38,7 @@ OpenAI公式ドキュメントでは、ローカルクライアントの既定�
 |---|---|
 | full access禁止（[00 R3](00-red-lines.md)） | `config.toml` で `:danger-full-access` を使わない運用＋受入テスト。**強制ではなく自己規律**のため、外部境界（VM/コンテナ/ネットワーク）で実害を限定 |
 | `.env`・資格情報のread遮断 | `config.toml` の filesystem deny＋コンテナの `denyRead` 相当＋ホストに資格情報を置かない |
-| ネットワーク限定 | `config.toml` の network domains 許可リスト＋コンテナ・ホストのegress制御 |
+| ネットワーク限定 | `config.toml` の network domains 許可リスト＋`features.network_proxy = true`（無いと許可リストが適用されない。[10.4](#104-開発者向け-configtoml-例)）＋コンテナ・ホストのegress制御 |
 | MCP制限 | 利用者が許可リストを自己管理。任意追加しない運用＋受入テスト |
 | 監査 | 製品の組織監査ログは無い。Gitログ・プロキシログ・OS監査・コンテナログで代替 |
 
@@ -52,6 +52,8 @@ OpenAI公式ドキュメントでは、ローカルクライアントの既定�
 |---|---|
 | full access禁止 | `allowed_permission_profiles` から `:danger-full-access` を除外、`allowed_approval_policies` を限定 |
 | live検索禁止 | `allowed_web_search_modes = ["cached"]`（`disabled` は常に許可） |
+| ネットワーク限定 | `[experimental_network]`（`enabled = true`・`managed_allowed_domains_only = true`・管理者の `domains`）で管理側からプロキシを起動し、許可リストを強制。experimental 扱いのため対象 OS・バージョンで受入テストしてから展開（[10.5](#105-管理者向け-requirementstoml-例)） |
+| 自動承認レビュー | `allowed_approvals_reviewers = ["user"]` で人間の承認に固定。採用する場合は `guardian_policy_config` で組織の審査方針を与える（[10.7](#107-codexの履歴追加サーフェス)） |
 | `.env`・資格情報のread遮断 | 管理 `[permissions.filesystem].deny_read` を全profileへ強制 |
 | MCP・Hooks制限 | MCP identity allowlist、`allow_managed_hooks_only` |
 | 監査 | 組織アカウントの監査ログ＋設定変更・外部ツール呼び出しの監視 |
@@ -97,9 +99,12 @@ glob_scan_max_depth = 4
 enabled = false
 ```
 
-ネットワークが必要な場合は、全許可ではなくドメイン許可リストを定義する。
+ネットワークが必要な場合は、全許可ではなくドメイン許可リストを定義する。**`network.enabled = true` はネットワークを開くだけでプロキシを起動しない**ため、ドメイン許可リストを強制するには `features.network_proxy = true` を必ず併せて設定する。
 
 ```toml
+[features]
+network_proxy = true
+
 [permissions.business-workspace.network]
 enabled = true
 
@@ -110,10 +115,20 @@ enabled = true
 "tracking.example" = "deny"
 ```
 
+公式ドキュメント上の挙動は次のとおりである（2026-09-23 確認。[付録C](appendix-c-volatile-values.md)）。
+
+| `network.enabled` | `features.network_proxy` | 結果 |
+|---|---|---|
+| `false` | どちらでも | ネットワーク不可 |
+| `true` | 無効（既定） | **無制限の直接通信**。ドメイン規則は適用されない |
+| `true` | 有効 | プロキシ経由。ドメイン規則を適用（allow が無ければ外部宛ては遮断、deny が優先） |
+
+プロキシはサンドボックス内コマンドの通信だけを対象とし、Web検索・Apps／コネクタ・MCP サーバー・ブラウザ／Computer Use・Codex cloud・Codex 本体の通信は対象外である。これらはそれぞれの設定（`web_search`、`mcp_servers`、`features.*` 等）で制御する。
+
 許可ドメインはプロジェクトの依存取得、Git、社内ミラーなどに限定し、`"*"` の全許可を標準にしない。生成ツール（`generator/`）は、選択したスタックに応じてパッケージレジストリドメイン（例: npm → `registry.npmjs.org`）をこの許可リストの既定として対話時に提案する（提案であり、対話中に編集できる）。
 
 > [!NOTE]
-> filesystem の `:root` トークンは、2026-08-04 時点の config-reference に掲載がない（特殊トークンとして記載されているのは `:minimal` と `:workspace_roots`。[付録C](appendix-c-volatile-values.md)）。本章の例は従来どおり `:root` deny を残しているが、適用時に対象バージョンでの有効性を確認し、無効な場合は削除または代替の deny 指定へ置き換える。
+> filesystem の `:root`（ファイルシステムのルート）は公式の Permissions ページに記載された特殊パスで、`extends = ":workspace"` に `":root" = "deny"` と `":minimal" = "read"` を重ねる構成は公式の例と同じである（2026-09-23 確認。ほかに `:workspace_roots`・`:tmpdir`・`:slash_tmp` がある）。`:workspace` を継承すると、各ワークスペースルートの `.git`・`.agents`・`.codex` は読み取り専用に保護される。ネイティブ Windows の `unelevated` サンドボックスは一部の読み書きの切り分けを強制できず、その場合は実行を拒否する。Windows では適用後に受入テストで挙動を確認する。
 
 ---
 
@@ -123,6 +138,8 @@ enabled = true
 
 ```toml
 # 組織管理 requirements.toml の例
+# "untrusted" は、trust_level = "untrusted" のプロジェクトから導かれる厳格な承認を
+# 許可するための値。approval_policy = "untrusted" の直接指定は廃止されている。
 allowed_approval_policies = ["untrusted", "on-request"]
 
 # disabledは常に許可される。live検索を業務既定値として許可しない。
@@ -133,6 +150,9 @@ allow_remote_control = false
 allow_appshots = false
 allow_managed_hooks_only = true
 
+# 自動承認レビュー（auto-review）を使わず人間の承認に固定する場合
+# allowed_approvals_reviewers = ["user"]
+
 default_permissions = "org-workspace"
 
 [allowed_permission_profiles]
@@ -141,11 +161,12 @@ org-workspace = true
 # :workspace と :danger-full-access は意図的に省略
 
 # すべてのpermission profileへ追加され、利用者が緩和できないread deny。
+# 絶対パス（glob可）か ~ 始まりで書く。./ 始まりの相対パスは不可。
 [permissions.filesystem]
 deny_read = [
-  "**/.env",
-  "**/.env.*",
-  "**/secrets/**",
+  "/**/.env",
+  "/**/.env.*",
+  "/**/secrets/**",
   "~/.ssh",
   "~/.aws",
   "~/.kube",
@@ -177,7 +198,27 @@ prefix_rules = [
 ]
 ```
 
-ネットワークが必要な場合は、[10.4](#104-開発者向け-configtoml-例)と同様に `[permissions.org-workspace.network]` を `enabled = true`＋ドメイン許可リストへ置き換える。生成ツール（`generator/`）は、許可ドメインが指定されたときこの許可リスト形式で出力する。
+`deny_read` があると、Codex は full access を拒否し、read-only か workspace のサンドボックスで実行する。ただし**ネイティブ Windows では `deny_read` は直接のファイルツールにだけ効き、シェルのサブプロセスによる読み取りには効かない**。Windows 利用者には WSL2 かコンテナを使わせるか、ホストに資格情報を置かない運用で補う。
+
+ネットワークが必要な場合は、`[permissions.org-workspace.network]` を `enabled = true`＋ドメイン許可リストへ置き換え、**管理側でプロキシを起動する `[experimental_network]` を併せて置く**。profile の `enabled = true` だけでは、利用者が `features.network_proxy` を有効にしない限り直接通信になる（[10.4](#104-開発者向け-configtoml-例)）。
+
+```toml
+[permissions.org-workspace.network]
+enabled = true
+
+[permissions.org-workspace.network.domains]
+"github.com" = "allow"
+
+# 管理側からプロキシを起動し、管理者の allow 規則だけを有効にする。
+[experimental_network]
+enabled = true
+managed_allowed_domains_only = true
+
+[experimental_network.domains]
+"github.com" = "allow"
+```
+
+`[experimental_network]` は公式に experimental とされ、変更され得る。ネイティブ Windows の対応は限定的なので、対象 OS・バージョンで許可リスト外への通信が拒否されることを受入テストで確認してから展開する（[15](15-acceptance-tests.md)）。`enabled = true` だけではプロキシは起動せず、サンドボックスがネットワークを無効にしているときに通信を許可することもない。生成ツール（`generator/`）は、許可ドメインが指定されたとき config.toml に `features.network_proxy = true`、requirements.toml にこの `[experimental_network]` を出力する。
 
 旧方式の `sandbox_mode` を使用するクライアントでは、少なくとも次を制約する。
 
@@ -212,13 +253,13 @@ Codex webのタスク環境はローカルホストとは分離されたコン�
 
 - ローカルのセッション履歴を保存しない要件がある場合、対応バージョンで `history.persistence = "none"` を検討する（[付録C](appendix-c-volatile-values.md)）。
 - Appshots、Remote Control、Computer Use、Browser Use、Apps、MCP、Hooksは、ローカルコマンドのpermission profileとは別の制御面として審査する。
-- managed requirementsの`[features]`、Apps要件、MCP identity allowlist（`[mcp_servers]`。stdio は `command`、HTTP は `url` で照合。**空テーブルで全MCP無効**）、managed Hooksを必要に応じて使用する。
+- managed requirementsの`[features]`、Apps要件、MCP identity allowlist（`[mcp_servers]`。stdio は `command`、HTTP は `url` で照合。**空テーブルで全MCP無効**）、managed Hooksを必要に応じて使用する。`identity.command` を文字列で書くと引数・`cwd`・環境変数を照合しないため、起動引数まで固定したい場合は `executable` と `args` のマッチャー表を使う。
 - Codexの承認によるsandbox escalationは、通常のプロファイル内操作とは異なる実行経路である。承認を「一時的な境界解除」として扱い、内容を理解せず恒久許可しない。
 - リモート実行は認証済みのend-to-end暗号化（Noise）リレーで行われるが、リモート実行・委譲の有効化可否は組織で審査する。
 - マルチエージェント委譲は、app-server クライアントでスレッド／ターン単位に「無効・明示要求時のみ・能動」を設定できる。既定の委譲挙動を把握し、不要なら無効化する。
-- rollout トークン予算（使用量追跡・上限到達でターン中断）を運用上のコスト・暴走抑止に利用できる。
-- **auto-review（Guardian）**: サンドボックス境界での承認要求（escalation）を、人間の代わりに別のレビュー用エージェントが審査する機能。公式には「メインエージェントは同じサンドボックス・承認ポリシー・ネットワーク／ファイルシステム制限の中で動き、変わるのは escalation を誰が審査するか」と説明される（Claude Code の auto mode に相当。[付録C](appendix-c-volatile-values.md)）。Guardian は**隔離境界ではなく承認の代替**であり、`approval_policy = "on-request"` でも動作するとの報告（[Issue #43287](https://github.com/openai/codex/issues/43287)、open）があるため、採用可否・無効化手段・fail-closed 挙動は対象バージョンの公式ドキュメントで確認し、L3以上では受入テストで実挙動を記録する。0.153.0 では Full Access 時に確認のみの操作で Guardian 審査を省略する変更が入っており、full access を避ける本ガイドの方針を維持する。
-- 0.150.0 以降、信頼済みでないプロジェクトはプロジェクト直下の `AGENTS.md` を読み込まない。管理 deny-read が権限変更後も維持される修正（0.150.0）、`/cd` でサンドボックス制約を緩められない修正（0.151.0）、WSL サンドボックスからの Windows プロセス経由の脱出遮断（0.155.0）など、サンドボックス関連の修正が続いているため、対象バージョンの固定と更新時の再テスト（[17](17-periodic-review.md)）を前提にする。
+- rollout トークン予算（`features.rollout_budget`。使用量追跡・上限到達でターン中断）は、公式に「開発中・既定オフ」とされている。運用上のコスト・暴走抑止に使う場合は対象バージョンで挙動を確認する。
+- **auto-review（Guardian）**: サンドボックス境界での承認要求（escalation）を、人間の代わりに別のレビュー用エージェントが審査する機能。公式には「メインエージェントは同じサンドボックス・承認ポリシー・ネットワーク／ファイルシステム制限の中で動き、変わるのは escalation を誰が審査するか」と説明され、権限を広げるものではない（Claude Code の auto mode に相当。[付録C](appendix-c-volatile-values.md)）。既定は `approvals_reviewer = "user"`（人間が承認）で、`"auto_review"` を選んだときだけ動く。審査の対象は、サンドボックス外への昇格・ブロックされた通信・書き込み可能ルート外の編集・承認が必要な MCP／App ツール呼び出しなど、もともと承認が要る操作に限られる。審査の構築・実行・解析に失敗した場合は実行せず（fail-closed）、タイムアウトでも実行しない。現行のオープンソース実装では、1ターン内で3回連続、または直近50件中10件が拒否されるとターンを中断する。`approval_policy = "never"`・full access では承認要求そのものが発生しないため審査も行われない。管理側は `allowed_approvals_reviewers`（`["user"]` で人間の承認に固定）、`features.guardian_approval`、`guardian_policy_config`（組織固有の審査方針。利用者の `[auto_review].policy` より優先）で制御できる。Guardian は**隔離境界ではなく承認の代替**であり、公式にも「決定論的なセキュリティ保証ではない」とされる。採用する場合も L3 以上では受入テストで実挙動を記録する。
+- 信頼済みでない（`trust_level = "untrusted"`）プロジェクトでは、プロジェクトの `.codex/` 配下の設定・Hooks・rules を読み込まない（公式設定リファレンス）。加えて 0.150.0 以降はプロジェクト直下の `AGENTS.md` 指示も読み込まない（リリースノート。公式 docs の AGENTS.md ガイドには記載がない）。管理 deny-read が権限変更後も維持される修正（0.150.0）、`/cd` でサンドボックス制約を緩められない修正（0.151.0）、WSL サンドボックスからの Windows プロセス経由の脱出遮断（0.155.0）など、サンドボックス関連の修正が続いているため、対象バージョンの固定と更新時の再テスト（[17](17-periodic-review.md)）を前提にする。
 - Hooks は非同期実行と MCP ツール呼び出しに対応した（0.148.0）。Hook 自体が新たな実行・通信経路になるため、`allow_managed_hooks_only = true`（`requirements.toml` でのみ有効）で供給元を限定する（[13](13-mcp-plugins-hooks.md)）。
 - Agent Plugins・プラグインマーケットプレイス（0.146.0 以降）は、managed requirements の `[marketplaces].restrict_to_allowed_sources`・`features.plugins` で供給元を限定する（[付録C](appendix-c-volatile-values.md)）。
 
@@ -226,6 +267,8 @@ Codex webのタスク環境はローカルホストとは分離されたコン�
 
 - `:danger-full-access` を通常利用する
 - `approval_policy = "never"` を業務既定値にする
+- `approval_policy = "untrusted"` を設定する（廃止済みで、クライアントが起動しないことがある。厳格な承認が必要なら `trust_level = "untrusted"` を使う）
+- ドメイン許可リストを書いただけで `features.network_proxy`（または管理側 `[experimental_network]`）を有効にしない
 - full access相当のショートカットを利用する
 - live Web検索と広いローカル権限と本番シークレットを同時に許可する
 - プロジェクトの `.codex` 設定を無条件に信頼する

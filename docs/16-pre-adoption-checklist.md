@@ -47,6 +47,7 @@
 
 - [ ] モデル通信とコマンド通信を分けているか
 - [ ] Codexの`disabled` / `cached` / `indexed` / `live`と、Claude Codeの`WebSearch` / `WebFetch`の方針を分けて決めたか
+- [ ] Codexでコマンドネットワークのドメイン許可リストを使う場合、`features.network_proxy = true`（チーム系は管理側 `[experimental_network]`）も設定したか（無いと許可リストが適用されず直接通信になる。[10.4](10-codex.md)）
 - [ ] 外向き通信はdeny by defaultか
 - [ ] 必要ドメインを棚卸ししたか
 - [ ] 本番API・DB・管理画面への到達を防いだか

@@ -58,8 +58,16 @@ def apply_steps(file_keys):
                      "リポジトリ外の管理パスへ配置")
     if "codex/.codex/config.toml" in file_keys:
         steps.append("- Codex: `codex/.codex/config.toml` を配置")
+        steps.append("- Codex 補足: permission profile の `network.enabled = true` はプロキシを"
+                     "起動しない。ドメイン許可リストは `features.network_proxy = true` と組で"
+                     "初めて適用され、無いと無制限の直接通信になる（許可ドメイン指定時は生成済み。"
+                     "手で network を有効化する場合も併せて設定する。docs/10 10.4）")
     if "codex/requirements.toml" in file_keys:
         steps.append("- Codex 管理要件: `codex/requirements.toml` を管理側へ配置")
+        steps.append("- Codex 管理要件 補足: 許可ドメイン指定時に出力する `[experimental_network]` は"
+                     "experimental 扱いで、ネイティブ Windows の対応は限定的。対象 OS・バージョンで"
+                     "許可リスト外への通信が拒否されることを受入テストで確認してから展開する"
+                     "（docs/10 10.5）")
     if "Dockerfile" in file_keys:
         steps.append("- コンテナ: `Dockerfile` / `docker-compose.yml` / `.devcontainer/` を利用")
     return "\n".join(steps)

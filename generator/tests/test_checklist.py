@@ -12,6 +12,10 @@ class TestChecklistExtraRows(unittest.TestCase):
         self.assertIn("auto-review", checklist.extra_rows(["codex"]))
         self.assertNotIn("auto-review", checklist.extra_rows(["claude"]))
 
+    def test_codex_network_proxy_row_only_for_codex(self):
+        self.assertIn("network_proxy", checklist.extra_rows(["codex"]))
+        self.assertNotIn("network_proxy", checklist.extra_rows(["claude"]))
+
     def test_rows_are_markdown_table_rows(self):
         for line in checklist.extra_rows(["claude", "codex"]).splitlines():
             self.assertTrue(line.startswith("| ") and line.endswith(" |"), line)

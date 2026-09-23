@@ -31,10 +31,11 @@
 | Pro/Max/Team プランで、`permissions.defaultMode` の指定どおりの開始モードになること（ターミナル・VS Code 拡張の両方。管理設定で `disableAutoMode` を置いた場合は auto mode を選択できないこと） | 指定モードで開始・auto は選択不可 |
 | `permissions.blockReadsOutsideWorkingDirectories` 採用時に、作業ディレクトリ外（ホーム配下）の Read/Grep/Glob と `cat ~/.ssh/...` が拒否または確認されること | 拒否または確認 |
 | `crossSessionInbound: "refuse"` のとき、他セッションからの `SendMessage` が届かないこと（採用時） | 拒否 |
+| Codex でドメイン許可リストを設定したとき、許可リスト外ホストへのサンドボックス内通信が拒否されること（`features.network_proxy` または管理側 `[experimental_network]` が無いと直接通信になるため、設定の有無と実拒否の両方を確認。[10.4](10-codex.md)） | 拒否 |
 | Codex auto-review（Guardian）採用時、`.env` 読み取り・`git push`・ワークスペース外書き込みの escalation が自動承認されないこと | 拒否または人間の承認 |
 
 > [!NOTE]
-> 生成ツール（`generator/`）は、本表の追加行のうち製品別の観点を `acceptance/checklist.md` へ出力する（Claude Code 向け4行・Codex 向け1行）。本表を更新したときは生成ツール側（`agentsec/checklist.py`）も合わせて更新する。
+> 生成ツール（`generator/`）は、本表の追加行のうち製品別の観点を `acceptance/checklist.md` へ出力する（Claude Code 向け4行・Codex 向け2行）。本表を更新したときは生成ツール側（`agentsec/checklist.py`）も合わせて更新する。
 
 ## 15.2 記録
 
