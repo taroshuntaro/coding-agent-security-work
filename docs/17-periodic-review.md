@@ -23,6 +23,7 @@
 - サンドボックスの対応OS・制約
 - 管理設定が古いクライアントで無視されないか（Claude Code は `requiredMinimumVersion` で範囲外起動を拒否できる。Codex は全台の対応バージョンを別途確認）
 - ネットワーク要件の変更
+- Codex の `[experimental_network]`（experimental で変更され得る）と `features.network_proxy` の仕様が変わっていないか（[10.5](10-codex.md)）
 - データ取扱条件の変更
 
 > [!NOTE]

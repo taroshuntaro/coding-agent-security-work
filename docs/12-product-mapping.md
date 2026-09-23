@@ -9,11 +9,11 @@
 | コマンド前確認 | `approval_policy` | permission mode、ask rules |
 | OSレベル制限 | sandbox / permission profile | sandbox filesystem/network |
 | 機密ファイルdeny | permission profile filesystem deny | `permissions.deny`＋sandbox denyRead |
-| コマンドネットワーク | permission profile network | sandbox network |
+| コマンドネットワーク | permission profile network（ドメイン規則は `features.network_proxy` か管理側 `[experimental_network]` でプロキシを起動したときだけ適用） | sandbox network |
 | 組み込みWeb機能 | `web_search`（`disabled` / `cached` / `indexed` / `live`） | `WebSearch`、`WebFetch`のpermission rule。Bash通信は別制御 |
 | 管理強制 | `requirements.toml`、managed config | managed settings |
 | 全権限 | `:danger-full-access` | `bypassPermissions` |
-| 承認の自動審査（隔離境界ではない） | auto-review（Guardian）。escalation を別エージェントが審査 | auto mode。分類器がツール呼び出しを審査（Pro/Max/Team は既定の開始モード。[11.10](11-claude-code.md)） |
+| 承認の自動審査（隔離境界ではない） | auto-review（Guardian）。既定は人間が承認（`approvals_reviewer = "user"`）。有効化すると escalation を別エージェントが審査。管理側は `allowed_approvals_reviewers` で制限 | auto mode。分類器がツール呼び出しを審査（Pro/Max/Team は既定の開始モード。[11.10](11-claude-code.md)） |
 | 指示・拡張の供給元固定 | `allow_managed_hooks_only`、`[marketplaces].restrict_to_allowed_sources`、`features.plugins` | `strictPluginOnlyCustomization`、`strictKnownMarketplaces`、`allowManagedHooksOnly` |
 | セッション間連携・遠隔操作 | `@` メンション・`codex agents`・Remote Control（`allow_remote_control`） | `SendMessage` / `ListAgents`（`crossSessionInbound`）、Remote Control（`disableRemoteControl`）。[11.11](11-claude-code.md) |
 | 外部ツール | MCP設定・管理制限 | MCP・Hooks・Pluginsの管理制限 |
