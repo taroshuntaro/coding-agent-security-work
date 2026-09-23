@@ -10,14 +10,21 @@
 | シークレット漏えい | `.env`、SSH鍵、クラウド資格情報の読み取り・出力 | ワークスペース外保管、deny、短寿命認証、ログマスキング |
 | データ流出 | `curl`、MCP、悪意ある依存関係を介した送信 | エグレス制限、ドメイン許可リスト、外部連携制限 |
 | プロンプトインジェクション | README、Issue・PRコメント、Webページ、依存パッケージ、MCPツールの説明や実行結果に埋め込まれた悪意ある指示 | 外部コンテンツを非信頼扱い、3要素を同時に成立させない（[3.2](#32-プロンプトインジェクションは防げない前提で設計する)）、ネットワーク制限、承認、隔離 |
-| サプライチェーン侵害 | 不正パッケージ、インストールスクリプト | 内部ミラー、バージョン固定、lockfile、署名・スキャン |
+| サプライチェーン侵害 | 不正パッケージ、インストールスクリプト、エージェントが提案した実在しないパッケージ名（slopsquatting） | 内部ミラー、バージョン固定、lockfile、クールダウン、署名・スキャン（[7.4](07-command-policy.md)） |
 | ホスト侵害 | ホームディレクトリ、Dockerソケット、デバイスへのアクセス | コンテナ・VM、マウント最小化、非root、capability削除 |
 | 外部環境の破壊 | `terraform apply`、`kubectl delete`、本番DB更新 | 本番資格情報を渡さない、コマンドdeny、CI/CD承認 |
 | 設定の迂回 | ユーザーがfull accessやbypassを選択 | 管理設定、許可プロファイル制限、監査 |
 | 監査不能 | 誰が何を実行したか不明 | 組織アカウント、監査ログ、操作ログ、PR記録 |
 | データ取扱違反 | 個人アカウントへの顧客コード投入 | 契約済み組織環境、データ分類、顧客合意、利用範囲管理 |
 | リポジトリ起因の環境侵害 | Dev Container、Dockerfile、Hooks、依存スクリプトの自動実行 | 初回レビュー、workspace trust、使い捨て環境、ホスト共有の最小化 |
+| エージェントCLIの悪用 | 悪意ある依存パッケージのインストールスクリプトが、ホスト上のログイン済みエージェントを権限スキップ付きで起動し、資格情報を探索・持ち出す（下記の事例） | 非信頼コードをホストで直接実行しない、エージェントの認証をコンテナ・VM内に閉じる、権限スキップのエイリアスを作らない（[8.7](08-secrets.md)） |
+| MCP経由の注入・権限濫用 | ツール定義への指示埋め込み、承認後の定義変更、外部データを返すツール結果、過剰なOAuth権限 | ツール定義の審査と変更検知、scope最小化、書き込み系ツールの分離（[13.4](13-mcp-plugins-hooks.md)） |
+| メモリ汚染 | 注入された指示が自動メモリや指示ファイルへ書き込まれ、以後のセッションで持続する | メモリの無効化・案件分離・定期確認（[2.7](02-terms-and-control-layers.md)） |
+| 無人実行・CIでの悪用 | 第三者のIssue・PR・コメントを起点に、シークレット付きのエージェントジョブが起動する | 起動できる人の限定、トークン権限の最小化、使い捨てランナー（[14.4](14-git-cicd.md)） |
 | 二次データ残存 | 会話履歴、メモリ、キャッシュ、ログ、チェックポイント | 保存先分離、保持期間、暗号化、削除、永続化無効化 |
+
+> [!NOTE]
+> **事例: Nx「s1ngularity」事件（2025-08）**。ビルドツール Nx の npm パッケージに悪性の版が公開され（2025-08-26、同日中に削除）、インストール時に実行されるスクリプトがファイルシステムから資格情報を探索し、被害者自身のGitHubアカウントに作ったリポジトリへ持ち出した（Nx 公式アドバイザリ）。セキュリティ企業の解析によると、このスクリプトはホストにインストールされていた Claude Code・Gemini CLI・Amazon Q CLI を、それぞれの権限スキップのフラグ付きで起動し、探索をエージェントに行わせていた。狙われたのは GitHub トークン、npm トークン（`~/.npmrc`）、SSH鍵、`.env` などである。発端は、PRタイトル経由のコマンド注入が可能な `pull_request_target` ワークフローから npm 公開トークンを盗まれたことだった（[14.4](14-git-cicd.md)）。出典は[20 参照資料](20-references.md)。
 
 ## 3.2 プロンプトインジェクションは防げない前提で設計する
 
@@ -40,6 +47,23 @@
 
 > [!NOTE]
 > この考え方は "lethal trifecta"（Simon Willison）や "Agents Rule of Two"（Meta）として知られる。出典は[20 参照資料](20-references.md)を参照。
+
+## 3.3 外部の分類との対応
+
+他の枠組みで整理されたリスクと突き合わせる場合は、次を目安にする（OWASP Top 10 for Agentic Applications 2026 の項目名。[20](20-references.md)）。
+
+| OWASP（Agentic 2026） | 本ガイドの主な対応箇所 |
+|---|---|
+| ASI01 Agent Goal Hijack | プロンプトインジェクション（[3.2](#32-プロンプトインジェクションは防げない前提で設計する)） |
+| ASI02 Tool Misuse and Exploitation | コマンドポリシー（[07](07-command-policy.md)）、MCP（[13](13-mcp-plugins-hooks.md)） |
+| ASI03 Identity & Privilege Abuse | シークレット（[08](08-secrets.md)）、本番権限（[14.2](14-git-cicd.md)） |
+| ASI04 Agentic Supply Chain Vulnerabilities | 依存パッケージ（[7.4](07-command-policy.md)）、MCP・プラグイン供給元（[13](13-mcp-plugins-hooks.md)） |
+| ASI05 Unexpected Code Execution | コンテナ・VM（[09](09-containers.md)）、リポジトリ由来の環境定義（[4.6](04-execution-architecture.md)） |
+| ASI06 Memory & Context Poisoning | 指示・拡張レイヤー、メモリ（[2.7](02-terms-and-control-layers.md)） |
+| ASI07 Insecure Inter-Agent Communication | サブエージェント（[2.7](02-terms-and-control-layers.md)）、セッション間連携（[11.11](11-claude-code.md)） |
+| ASI08 Cascading Failures | 無人実行（[05](05-levels.md)・[14.4](14-git-cicd.md)）、職務分離 |
+| ASI09 Human-Agent Trust Exploitation | 人間のレビュー（[00 R4](00-red-lines.md)・[14.3](14-git-cicd.md)）、利用者ルール（[付録B](appendix-b-user-rules.md)） |
+| ASI10 Rogue Agents | 権限バイパスの禁止（[00 R3](00-red-lines.md)）、監査・定期レビュー（[17](17-periodic-review.md)） |
 
 各リスクへの具体的な統制は、[05 レベル](05-levels.md)、[07 コマンドポリシー](07-command-policy.md)、[08 シークレット](08-secrets.md)、[09 コンテナ](09-containers.md)、[13 MCP・Plugins・Hooks](13-mcp-plugins-hooks.md)で扱う。
 
