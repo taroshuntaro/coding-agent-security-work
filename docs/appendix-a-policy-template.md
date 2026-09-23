@@ -29,6 +29,8 @@
 - read-only対象:
 
 ## 4. コマンド
+- 開始時の権限モード（Claude Code `defaultMode` / Codex `approval_policy`）:
+- 自動承認レビュー（Claude Code auto mode / Codex auto-review）の採用可否と根拠:
 - 自動許可:
 - 都度確認:
 - 拒否:
@@ -51,7 +53,9 @@
 ## 7. 外部連携
 - 許可MCP:
 - 許可Plugins:
-- 許可Hooks:
+- 許可Hooks（HTTP Hooks の許可URL含む）:
+- プラグイン供給元（許可マーケットプレイス）:
+- セッション間メッセージ / Remote Control / バックグラウンドエージェント:
 - Git権限:
 - クラウド権限:
 

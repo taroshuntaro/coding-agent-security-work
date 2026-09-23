@@ -17,6 +17,8 @@
 ## 17.2 製品更新時
 
 - 新しい権限モード・ツール・外部連携が自動的に有効にならないか
+- 既定の権限モード・自動承認の既定が変わっていないか（例: Claude Code は v2.1.228 で Pro/Max/Team の既定開始モードが auto mode に変わった。Codex の auto-review）
+- 設定キーの有効スコープ（user / project / managed）が変わっていないか（例: `strictAllowlist` はプロジェクト設定では無効）
 - 設定キーの廃止・既定値変更
 - サンドボックスの対応OS・制約
 - 管理設定が古いクライアントで無視されないか（Claude Code は `requiredMinimumVersion` で範囲外起動を拒否できる。Codex は全台の対応バージョンを別途確認）

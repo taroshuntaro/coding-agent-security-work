@@ -13,6 +13,9 @@
 | 組み込みWeb機能 | `web_search`（`disabled` / `cached` / `indexed` / `live`） | `WebSearch`、`WebFetch`のpermission rule。Bash通信は別制御 |
 | 管理強制 | `requirements.toml`、managed config | managed settings |
 | 全権限 | `:danger-full-access` | `bypassPermissions` |
+| 承認の自動審査（隔離境界ではない） | auto-review（Guardian）。escalation を別エージェントが審査 | auto mode。分類器がツール呼び出しを審査（Pro/Max/Team は既定の開始モード。[11.10](11-claude-code.md)） |
+| 指示・拡張の供給元固定 | `allow_managed_hooks_only`、`[marketplaces].restrict_to_allowed_sources`、`features.plugins` | `strictPluginOnlyCustomization`、`strictKnownMarketplaces`、`allowManagedHooksOnly` |
+| セッション間連携・遠隔操作 | `@` メンション・`codex agents`・Remote Control（`allow_remote_control`） | `SendMessage` / `ListAgents`（`crossSessionInbound`）、Remote Control（`disableRemoteControl`）。[11.11](11-claude-code.md) |
 | 外部ツール | MCP設定・管理制限 | MCP・Hooks・Pluginsの管理制限 |
 | 外側の隔離 | コンテナ・VMを別途利用 | 開発コンテナ・VMを別途利用 |
 

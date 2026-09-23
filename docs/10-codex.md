@@ -217,6 +217,10 @@ Codex webのタスク環境はローカルホストとは分離されたコン�
 - リモート実行は認証済みのend-to-end暗号化（Noise）リレーで行われるが、リモート実行・委譲の有効化可否は組織で審査する。
 - マルチエージェント委譲は、app-server クライアントでスレッド／ターン単位に「無効・明示要求時のみ・能動」を設定できる。既定の委譲挙動を把握し、不要なら無効化する。
 - rollout トークン予算（使用量追跡・上限到達でターン中断）を運用上のコスト・暴走抑止に利用できる。
+- **auto-review（Guardian）**: サンドボックス境界での承認要求（escalation）を、人間の代わりに別のレビュー用エージェントが審査する機能。公式には「メインエージェントは同じサンドボックス・承認ポリシー・ネットワーク／ファイルシステム制限の中で動き、変わるのは escalation を誰が審査するか」と説明される（Claude Code の auto mode に相当。[付録C](appendix-c-volatile-values.md)）。Guardian は**隔離境界ではなく承認の代替**であり、`approval_policy = "on-request"` でも動作するとの報告（[Issue #43287](https://github.com/openai/codex/issues/43287)、open）があるため、採用可否・無効化手段・fail-closed 挙動は対象バージョンの公式ドキュメントで確認し、L3以上では受入テストで実挙動を記録する。0.153.0 では Full Access 時に確認のみの操作で Guardian 審査を省略する変更が入っており、full access を避ける本ガイドの方針を維持する。
+- 0.150.0 以降、信頼済みでないプロジェクトはプロジェクト直下の `AGENTS.md` を読み込まない。管理 deny-read が権限変更後も維持される修正（0.150.0）、`/cd` でサンドボックス制約を緩められない修正（0.151.0）、WSL サンドボックスからの Windows プロセス経由の脱出遮断（0.155.0）など、サンドボックス関連の修正が続いているため、対象バージョンの固定と更新時の再テスト（[17](17-periodic-review.md)）を前提にする。
+- Hooks は非同期実行と MCP ツール呼び出しに対応した（0.148.0）。Hook 自体が新たな実行・通信経路になるため、`allow_managed_hooks_only = true`（`requirements.toml` でのみ有効）で供給元を限定する（[13](13-mcp-plugins-hooks.md)）。
+- Agent Plugins・プラグインマーケットプレイス（0.146.0 以降）は、managed requirements の `[marketplaces].restrict_to_allowed_sources`・`features.plugins` で供給元を限定する（[付録C](appendix-c-volatile-values.md)）。
 
 ## 10.8 Codexで避ける設定・運用
 
@@ -227,6 +231,7 @@ Codex webのタスク環境はローカルホストとは分離されたコン�
 - プロジェクトの `.codex` 設定を無条件に信頼する
 - ユーザーが任意のMCPサーバーを追加できる
 - 管理要件の取得失敗時の挙動を確認せず、クラウド管理だけに依存する
+- auto-review（Guardian）を隔離境界とみなす（承認の代替に過ぎず、サンドボックス・deny・外側境界の代わりにならない）
 - エージェントに直接push・deploy・本番操作させる
 
 [← 目次へ戻る](README.md) ｜ [次：11 Claude Codeの推奨方針 →](11-claude-code.md)

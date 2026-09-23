@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from agentsec import (rules, build_claude, build_codex, render_text, banner,
-                      readme, profile as profile_mod)
+                      readme, checklist, profile as profile_mod)
 
 
 def _write(out_root, rel, text):
@@ -89,6 +89,7 @@ def generate(profile, output_dir, deviations, base_image):
         "artifact_guide": readme.artifact_guide(artifact_keys),
         "apply_steps": readme.apply_steps(artifact_keys),
         "placement_guide": readme.placement_guide(artifact_keys),
+        "checklist_extra_rows": checklist.extra_rows(profile["products"]),
     }
     files["acceptance/checklist.md"] = _write(output_dir, "acceptance/checklist.md",
         render_text.render("acceptance/checklist.md.tmpl", text_map))

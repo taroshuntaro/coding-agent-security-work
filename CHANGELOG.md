@@ -5,6 +5,34 @@
 - [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) のカテゴリ（Added / Changed 等）を借りつつ、**日付見出し（`## YYYY-MM-DD`）の逆年代ログ**として運用する（リリース・版番号の概念は持たない）。
 - 更新手順は `AGENTS.md`「CHANGELOG の運用」を参照。ユーザーの指示で更新する。
 
+## 2026-09-23
+
+### Added
+- docs/11: auto mode（分類器）の位置づけと統制を 11.10 として新設。セッション間メッセージ・Remote Control・バックグラウンドエージェントの統制を 11.11 として新設。
+- docs: 新しい統制キーを記載: `permissions.blockReadsOutsideWorkingDirectories`（v2.1.257 以降）、`--restricted`（v2.1.248 以降）、`strictPluginOnlyCustomization`、`strictKnownMarketplaces` / `blockedMarketplaces` / `disableCommandPluginSources`、HTTP Hooks の `allowedHttpHookUrls` / `httpHookAllowedEnvVars`、`managedMcpServers`、`crossSessionInbound` / `isolatePeerMachines`（docs/11・13・付録C）。
+- docs/12: 承認の自動審査（Codex auto-review ↔ Claude Code auto mode）、指示・拡張の供給元固定、セッション間連携・遠隔操作の対応行を追加。
+- docs/15: 受入テストに `strictAllowlist` の配置、開始モード、作業ディレクトリ外読み取りの遮断、セッション間メッセージの拒否、Codex auto-review の観点を追加。docs/16・17・付録A にも対応する確認項目・記入欄を追加。
+- generator: L3 以上の `managed-settings.json` に `crossSessionInbound: "refuse"` と `isolatePeerMachines: true` を出力（docs/11 11.5・11.11 と一致）。
+- generator: 生成する受入チェックリストに製品別の追加行を出力する `agentsec/checklist.py` を追加（docs/15 の追加観点を Claude Code 向け4行・Codex 向け1行として反映）。
+- generator: `selfcheck.py` が project settings 内の `strictAllowlist` / `tlsTerminate` / `filesystem.disabled`（user / managed でのみ有効なキー）を検出したとき WARN。
+
+### Changed
+- docs: 2026-08-04 以降の Claude Code の更新を一次資料（settings reference・sandboxing・permission modes・managed settings・server-managed settings・CHANGELOG v2.1.278 まで）で確認し反映。
+  - Pro / Max / Team では v2.1.228 以降、ターミナルと VS Code 拡張の組み込み既定の開始モードが `auto`。推奨（L1 `plan`／L2 以上 `default`）を維持するため `permissions.defaultMode` を明示する旨を 11.2・11.4 に記載。VS Code 拡張はプロジェクト設定を開始モードの決定に使わないため、ユーザー設定または管理設定に置く。
+  - `autoAllowBashIfSandboxed` の既定値が `true` と公式に明記されたことを反映（明示 `false` 推奨は維持。付録C の「既定値は明示なし」注記を差し替え）。
+  - 設定キーの有効スコープを付録C に記録: `strictAllowlist`・`tlsTerminate`・`filesystem.disabled`・`autoMode`・`useAutoModeDuringPlan`、および `defaultMode` の `auto` / `bypassPermissions` はリポジトリの `.claude/settings.json` から効かない。
+  - server-managed settings は既定 fail-open で、プロバイダ環境変数や独自 `ANTHROPIC_BASE_URL` のエクスポートで取得自体がスキップされる点、管理設定ファイルの解析失敗時は起動拒否（v2.1.259 以降）となる点、サンドボックスを弱める配信設定は承認ダイアログを要する点（v2.1.251 以降）を 11.5・付録C に記載。`requiredMinimumVersion` の下限根拠としてセキュリティ修正の一覧を付録C に追加。
+  - `disableArtifact` は deprecated。docs/11 11.5 と generator は `enableArtifact: false` を正としつつ、同キーを認識しない v2.1.196 未満のクライアント向けに `disableArtifact: true` を併記。
+  - Issue #44642（closed, not planned）・#43713（closed）を再確認。
+- docs/10・付録C: Codex は公式リファレンス（`learn.chatgpt.com`）へ作業環境から到達できなかったため、設定リファレンス由来の値は 2026-08-04 確認のまま据え置き。GitHub リリース（0.143.0〜0.155.1）と `docs/config.md` で確認できた事項（auto-review（Guardian）、信頼済みでないプロジェクトの `AGENTS.md` 非読込、サンドボックス関連修正、Hooks の非同期・MCP 呼び出し対応、プラグインマーケットプレイス、`allow_managed_hooks_only` は `requirements.toml` でのみ有効）を追記。
+- 付録C の基準確認日を 2026-08-04 から 2026-09-21（Claude Code）に更新（Codex 設定リファレンスは 2026-08-04 のまま）。`docs/README.md` の仕様確認基準日も同様に併記へ変更。
+- docs/00 R3・R5、docs/02 2.7、docs/08 に自動承認レビュー・有効スコープ・`sandbox.credentials` の観点を追記。docs/20 に参照リンクを追加。
+- generator: 生成物 README の Claude Code 適用手順を拡充。`strictAllowlist` と `defaultMode` の置き場所を、管理設定が生成物に含まれるか（チーム系かつ L3 以上）に応じて `~/.claude/settings.json` または同梱の `managed-settings.json` へ案内。
+
+### Fixed
+- generator: 生成する project `settings.json` から `sandbox.network.strictAllowlist` を除去。同キーは user / managed / `--settings` でのみ有効で、リポジトリの `.claude/settings.json` に置いても無視される（docs/11 11.4 の設定例も同様に修正。設定の存在と実効性が一致していなかった）。
+- generator: `selfcheck.py` が `autoAllowBashIfSandboxed` 未指定を安全側とみなしていた前提を修正。既定は `true`（auto-allow）のため、`enabled` の有無に関わらず未指定を FAIL とし、`managed-settings.json` も検査対象に加えた。
+
 ## 2026-08-04
 
 ### Added

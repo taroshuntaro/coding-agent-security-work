@@ -51,10 +51,12 @@ class TestBuildClaude(unittest.TestCase):
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
         self.assertIn("Bash(git commit *)", m["permissions"]["ask"])
 
-    def test_settings_network_strict_allowlist(self):
-        # docs/11 11.4: 許可リスト外ホストは確認でなく拒否（v2.1.219 未満では無視）
+    def test_settings_network_omits_strict_allowlist(self):
+        # docs/11 11.4: strictAllowlist は user/managed/--settings でのみ有効で、
+        # リポジトリの .claude/settings.json に置いても効かない（2026-09-21 確認）。
+        # 効かないキーを生成すると「設定した」と誤認させるため出力しない。
         s = build_claude.build_settings("L2", ["npm"], ["github.com"], [])
-        self.assertIs(s["sandbox"]["network"]["strictAllowlist"], True)
+        self.assertNotIn("strictAllowlist", s["sandbox"]["network"])
 
     def test_managed_network_strict_allowlist(self):
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
@@ -65,3 +67,17 @@ class TestBuildClaude(unittest.TestCase):
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
         self.assertIn("WebSearch", m["permissions"]["deny"])
         self.assertNotIn("WebSearch", m["permissions"]["ask"])
+
+    def test_managed_emits_both_artifact_keys(self):
+        # docs/11 11.5: enableArtifact は v2.1.196 以降でのみ認識される。
+        # それ未満のクライアントでもロックが外れないよう、公式が同等と認める
+        # 旧キー disableArtifact: true も併記する（新キーが正・旧キーは後方互換）。
+        m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
+        self.assertIs(m["enableArtifact"], False)
+        self.assertIs(m["disableArtifact"], True)
+
+    def test_managed_locks_cross_session_messaging(self):
+        # docs/11 11.11: 機密案件（L3+）は受信を refuse、他マシンへの送信は承認必須
+        m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
+        self.assertEqual(m["crossSessionInbound"], "refuse")
+        self.assertIs(m["isolatePeerMachines"], True)

@@ -7,12 +7,12 @@
 - `.gitignore` はGitへの誤コミット防止であり、エージェントからの秘匿機能ではない。
 - エージェントがプロジェクトを読めるなら、プロジェクト内の `.env` も読める可能性がある。
 - 環境変数も、`env`、`printenv`、子プロセス、デバッグログから読める。
-- ファイルの read deny だけでは環境変数経由の資格情報は残る。Claude Codeでは `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` でサンドボックス内サブプロセスの環境変数からAnthropic・クラウド資格情報を除去できる（[付録C](appendix-c-volatile-values.md)、適用前に対象バージョンで確認）。
+- ファイルの read deny だけでは環境変数経由の資格情報は残る。Claude Codeでは `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` でサンドボックス内サブプロセスの環境変数からAnthropic・クラウド資格情報を除去でき（同時に auto-allow が無効化され、ファイルシステム隔離の無効化も無視される）、`sandbox.credentials.envVars` で個別の変数を `deny`／`mask` できる（[付録C](appendix-c-volatile-values.md)、適用前に対象バージョンで確認）。
 - 読み取り専用マウントは改変を防ぐが、内容の読み取りは防がない。
 - シークレットをプロンプトやチャットへ貼り付けない。
 
 > [!WARNING]
-> Claude CodeのBashサンドボックスは、既定のread動作で `~/.aws/credentials` や `~/.ssh/` を読み取れる。`denyRead` への明示追加が必要である（[11.1](11-claude-code.md)）。「サンドボックス有効」だけでは資格情報は守られない。
+> Claude CodeのBashサンドボックスは、既定のread動作で `~/.aws/credentials` や `~/.ssh/` を読み取れる（2026-09-21 再確認）。`denyRead` または `sandbox.credentials.files` への明示追加が必要である（[11.1](11-claude-code.md)）。「サンドボックス有効」だけでは資格情報は守られない。組み込みの資格情報 deny リストは存在しない。
 
 ## 8.2 推奨順位
 

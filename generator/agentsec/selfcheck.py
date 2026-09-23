@@ -13,6 +13,18 @@ REQUIRED_DENY = ["git push *", "sudo *"]
 FORBIDDEN_COMPOSE = ["privileged", "network_mode: host", "docker.sock", "/:/host"]
 
 
+def _check_sandbox_auto_allow(path, sb, msgs):
+    """autoAllowBashIfSandboxed は**既定が true**（auto-allow。docs/11 11.4・付録C）。
+    未指定は「明示 false」と同義ではなく、サンドボックス内 Bash が権限フローを
+    通らない状態になる。サンドボックスは user / managed 側で有効化され得るため、
+    このファイルに enabled が無くても未指定を FAIL とする。"""
+    if sb.get("autoAllowBashIfSandboxed", False):
+        msgs.append(f"FAIL {path}: autoAllowBashIfSandboxed が true です (11.4)")
+    elif "autoAllowBashIfSandboxed" not in sb:
+        msgs.append(f"FAIL {path}: sandbox.autoAllowBashIfSandboxed が未指定です。"
+                    "既定は true（auto-allow）のため明示的に false を指定する (11.4)")
+
+
 def _check_claude_settings(path, msgs):
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     deny = data.get("permissions", {}).get("deny", [])
@@ -23,14 +35,25 @@ def _check_claude_settings(path, msgs):
     if not any(".env" in d for d in deny):
         msgs.append(f"FAIL {path}: .env の read deny がありません (00 R2)")
     sb = data.get("sandbox", {})
-    if sb.get("autoAllowBashIfSandboxed", False):
-        msgs.append(f"FAIL {path}: autoAllowBashIfSandboxed が true です (11.4)")
+    _check_sandbox_auto_allow(path, sb, msgs)
+    # user / managed / --settings でのみ有効なキー。project settings に置いても無視される
+    # ため「設定したのに効かない」を静的に警告する（docs/11 11.4・付録C）。
+    if "strictAllowlist" in sb.get("network", {}):
+        msgs.append(f"WARN {path}: sandbox.network.strictAllowlist は project settings では"
+                    "無効です。~/.claude/settings.json か managed-settings.json に置く (11.4)")
+    if "tlsTerminate" in sb.get("network", {}):
+        msgs.append(f"WARN {path}: sandbox.network.tlsTerminate は project settings では"
+                    "無効です (11.6)")
+    if "disabled" in sb.get("filesystem", {}):
+        msgs.append(f"WARN {path}: sandbox.filesystem.disabled は project settings では"
+                    "無効です (11.8)")
 
 
 def _check_managed(path, msgs):
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     if data.get("permissions", {}).get("disableBypassPermissionsMode") != "disable":
         msgs.append(f"FAIL {path}: disableBypassPermissionsMode != disable (00 R3)")
+    _check_sandbox_auto_allow(path, data.get("sandbox", {}), msgs)
 
 
 def _check_compose(path, msgs):

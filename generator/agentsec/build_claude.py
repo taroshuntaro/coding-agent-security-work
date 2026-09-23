@@ -28,10 +28,10 @@ def build_settings(level, stacks_keys, allowed_domains, extra_deny_paths):
             "autoAllowBashIfSandboxed": False,
             "allowUnsandboxedCommands": False,
             "filesystem": {"denyRead": list(rules.CREDENTIAL_DIRS)},
-            # strictAllowlist: 許可リスト外ホストを確認プロンプトなしで拒否
-            # （v2.1.219 未満では無視され、既定の確認フローに落ちる。docs/11 11.4）
-            "network": {"allowedDomains": list(allowed_domains),
-                        "strictAllowlist": True},
+            # strictAllowlist はここに置かない: user / managed / --settings でのみ有効で、
+            # リポジトリの .claude/settings.json に置いても無視される（docs/11 11.4）。
+            # 個人系は ~/.claude/settings.json、チーム系は managed-settings.json に置く。
+            "network": {"allowedDomains": list(allowed_domains)},
         },
     }
 
@@ -42,9 +42,18 @@ def build_managed_settings(level, stacks_keys, allowed_domains, extra_deny_paths
     cmds = stacks.commands_for(stacks_keys)
     settings = {
         "$schema": SCHEMA,
+        # Artifact ロックは新旧2キーを併記する（docs/11 11.5）。
+        # enableArtifact は v2.1.196 以降でのみ認識されるため、それ未満の
+        # クライアントではロックが外れる。公式が同等と認める旧キー
+        # disableArtifact: true を残し、どのバージョンでも無効化されるようにする。
+        "enableArtifact": False,
         "disableArtifact": True,
         "disableRemoteControl": True,
         "disableClaudeAiConnectors": True,
+        # セッション間メッセージ（docs/11 11.11）: 機密案件では受信を拒否し、
+        # 他マシンの自セッションへの送信は bypass 中でも承認を求める。
+        "crossSessionInbound": "refuse",
+        "isolatePeerMachines": True,
         "autoMemoryEnabled": False,
         "cleanupPeriodDays": 7,
         "permissions": {
