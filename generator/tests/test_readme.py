@@ -39,6 +39,18 @@ class TestReadme(unittest.TestCase):
         text = readme.apply_steps(keys)
         self.assertIn("managed-settings.json", text)
 
+    def test_apply_steps_note_codex_network_proxy(self):
+        # network.enabled だけではドメイン規則が効かない（docs/10 10.4）
+        text = readme.apply_steps({"codex/.codex/config.toml"})
+        self.assertIn("network_proxy", text)
+
+    def test_apply_steps_note_codex_managed_network_caveat(self):
+        # [experimental_network] は experimental で、ネイティブ Windows は検証が要る（docs/10 10.5）
+        text = readme.apply_steps({"codex/requirements.toml"})
+        step = [ln for ln in text.splitlines() if "experimental_network" in ln]
+        self.assertEqual(len(step), 1)
+        self.assertIn("Windows", step[0])
+
 
 class TestPlacementGuide(unittest.TestCase):
     def test_managed_row_and_precedence_when_managed_present(self):

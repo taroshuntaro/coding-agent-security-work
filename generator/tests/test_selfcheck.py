@@ -68,6 +68,12 @@ class TestCodexConfig(unittest.TestCase):
         '"**/.env" = "deny"\n'
         '".devcontainer" = "read"\n'
     )
+    _NET = (
+        '[permissions.business-workspace.network]\n'
+        'enabled = true\n'
+        '[permissions.business-workspace.network.domains]\n'
+        '"github.com" = "allow"\n'
+    )
 
     def test_clean_l2_config_passes(self):
         with tempfile.TemporaryDirectory() as d:
@@ -116,6 +122,28 @@ class TestCodexConfig(unittest.TestCase):
             self.assertEqual(code, 2)
             self.assertTrue(any("R2" in m for m in msgs))
 
+    def test_domains_without_network_proxy_fails(self):
+        # プロキシ無しの network.enabled + domains は無制限の直接通信になる (10.4)
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/.codex/config.toml", self._L2 + self._NET)
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("network_proxy" in m for m in msgs), msgs)
+
+    def test_domains_with_network_proxy_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/.codex/config.toml",
+                   '[features]\nnetwork_proxy = true\n' + self._L2 + self._NET)
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)
+
+    def test_domains_with_network_proxy_table_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/.codex/config.toml",
+                   '[features.network_proxy]\nenabled = true\n' + self._L2 + self._NET)
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)
+
     def test_l1_read_only_skips_env_check(self):
         with tempfile.TemporaryDirectory() as d:
             _write(d, "codex/.codex/config.toml",
@@ -134,17 +162,50 @@ class TestCodexRequirements(unittest.TestCase):
         '":read-only" = true\n'
         'org-workspace = true\n'
         '[permissions.filesystem]\n'
-        'deny_read = ["**/.env", "**/secrets/**", "~/.ssh", "~/.aws"]\n'
+        'deny_read = ["/**/.env", "/**/secrets/**", "~/.ssh", "~/.aws"]\n'
         '[rules]\n'
         'prefix_rules = [\n'
         '  { pattern = [{ token = "git" }, { token = "push" }], decision = "forbidden", justification = "x" },\n'
         '  { pattern = [{ token = "sudo" }], decision = "forbidden", justification = "y" },\n'
         ']\n'
     )
+    _ORG_NET = (
+        '[permissions.org-workspace.network]\n'
+        'enabled = true\n'
+        '[permissions.org-workspace.network.domains]\n'
+        '"github.com" = "allow"\n'
+    )
 
     def test_clean_requirements_passes(self):
         with tempfile.TemporaryDirectory() as d:
             _write(d, "codex/requirements.toml", self._CLEAN)
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)
+            self.assertEqual(msgs, [])
+
+    def test_relative_deny_read_warns(self):
+        # deny_read は絶対パスか ~ 始まりが公式の書式 (10.5)
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/requirements.toml",
+                   self._CLEAN.replace('"/**/secrets/**"', '"**/secrets/**"'))
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 0, msgs)
+            self.assertTrue(any(m.startswith("WARN") and "deny_read" in m for m in msgs), msgs)
+
+    def test_org_domains_without_managed_network_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/requirements.toml", self._CLEAN + self._ORG_NET)
+            code, msgs = selfcheck.check_dir(d)
+            self.assertEqual(code, 2)
+            self.assertTrue(any("experimental_network" in m for m in msgs), msgs)
+
+    def test_org_domains_with_managed_network_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "codex/requirements.toml",
+                   self._CLEAN + self._ORG_NET
+                   + '[experimental_network]\nenabled = true\n'
+                   'managed_allowed_domains_only = true\n'
+                   '[experimental_network.domains]\n"github.com" = "allow"\n')
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 0, msgs)
 
@@ -168,7 +229,7 @@ class TestCodexRequirements(unittest.TestCase):
     def test_missing_env_deny_read_fails(self):
         with tempfile.TemporaryDirectory() as d:
             _write(d, "codex/requirements.toml",
-                   self._CLEAN.replace('"**/.env", ', ""))
+                   self._CLEAN.replace('"/**/.env", ', ""))
             code, msgs = selfcheck.check_dir(d)
             self.assertEqual(code, 2)
             self.assertTrue(any("R2" in m for m in msgs))

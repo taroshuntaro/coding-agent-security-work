@@ -73,6 +73,26 @@ def _check_profile(path, msgs):
             msgs.append(f"WARN {path}: SHOULD 逸脱 ({dev.get('rule_ref')})")
 
 
+def _profiles_with_domains(perms):
+    """network.enabled かつ domains を持つ permission profile 名を返す。"""
+    names = []
+    for name, prof in perms.items():
+        if not isinstance(prof, dict):
+            continue
+        net = prof.get("network", {})
+        if isinstance(net, dict) and net.get("enabled") and net.get("domains"):
+            names.append(name)
+    return names
+
+
+def _network_proxy_enabled(features):
+    """features.network_proxy は boolean と table（enabled キー）の両形式を取る。"""
+    value = features.get("network_proxy", False)
+    if isinstance(value, dict):
+        return value.get("enabled") is True
+    return value is True
+
+
 def _check_codex_config(path, msgs):
     data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
     if data.get("default_permissions") == ":danger-full-access":
@@ -90,6 +110,11 @@ def _check_codex_config(path, msgs):
         roots = prof.get("filesystem", {}).get(":workspace_roots", {})
         if roots and not any(".env" in k and v == "deny" for k, v in roots.items()):
             msgs.append(f"FAIL {path}: permissions.{name} に .env の deny がありません (00 R2)")
+    # プロキシが無いとドメイン規則は適用されず、無制限の直接通信になる（docs/10 10.4）。
+    if not _network_proxy_enabled(data.get("features", {})):
+        for name in _profiles_with_domains(perms):
+            msgs.append(f"FAIL {path}: permissions.{name} のドメイン許可リストは "
+                        "features.network_proxy = true が無いと適用されません (10.4)")
 
 
 def _has_forbidden(prefix_rules, tokens):
@@ -112,6 +137,15 @@ def _check_codex_requirements(path, msgs):
         msgs.append(f"FAIL {path}: deny_read に .env がありません (00 R2)")
     if not any((".ssh" in d or ".aws" in d or ".kube" in d) for d in deny_read):
         msgs.append(f"FAIL {path}: deny_read に資格情報ディレクトリがありません (00 R2)")
+    for entry in deny_read:
+        if not str(entry).startswith(("/", "~")):
+            msgs.append(f"WARN {path}: deny_read '{entry}' は絶対パスか ~ 始まりで書く (10.5)")
+    managed_net = data.get("experimental_network", {})
+    managed_on = isinstance(managed_net, dict) and managed_net.get("enabled") is True
+    if not (managed_on or _network_proxy_enabled(data.get("features", {}))):
+        for name in _profiles_with_domains(data.get("permissions", {})):
+            msgs.append(f"FAIL {path}: permissions.{name} のドメイン許可リストは "
+                        "[experimental_network] enabled = true が無いと適用されません (10.5)")
     prefix_rules = data.get("rules", {}).get("prefix_rules", [])
     if not _has_forbidden(prefix_rules, ["git", "push"]):
         msgs.append(f"FAIL {path}: prefix_rules に git push の forbidden がありません (00 R4)")

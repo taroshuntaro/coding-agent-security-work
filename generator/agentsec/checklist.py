@@ -20,6 +20,10 @@ _ROWS = [
      "| `crossSessionInbound: \"refuse\"` 採用時、他セッションからの `SendMessage` が届かない"
      " | 拒否 | |"),
     ("codex",
+     "| ドメイン許可リストを設定したとき、許可リスト外ホストへのサンドボックス内通信が拒否される"
+     "（`features.network_proxy` または管理側 `[experimental_network]` が無いと直接通信になる）"
+     " | 拒否 | |"),
+    ("codex",
      "| auto-review（Guardian）採用時、`.env` 読み取り・`git push`・ワークスペース外書き込みの"
      " escalation が自動承認されない | 拒否または人間の承認 | |"),
 ]

@@ -8,6 +8,18 @@ def _filesystem_deny_paths(extra_deny_paths):
     return base + list(extra_deny_paths)
 
 
+def _deny_read_pattern(path):
+    """requirements.toml の deny_read は絶対パスか ~ 始まりで書く（./ 始まりは不可。
+    docs/10 10.5）。ワークスペース相対の glob はどの階層でも一致する絶対 glob へ直す。"""
+    if path.startswith(("/", "~")):
+        return path
+    if path.startswith("./"):
+        path = path[2:]
+    if path.startswith("**/"):
+        return "/" + path
+    return "/**/" + path
+
+
 def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
     prof = rules.level_profile(level)
     header = "# ~/.codex/config.toml\n"
@@ -31,6 +43,12 @@ def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
         "approval_policy": "on-request",
         "web_search": prof["web_search"],
         "default_permissions": "business-workspace",
+    }
+    if allowed_domains:
+        # network.enabled はプロキシを起動しない。プロキシが無いとドメイン規則は
+        # 適用されず、コマンドは無制限に直接通信できる（docs/10 10.4）。
+        config["features"] = {"network_proxy": True}
+    config.update({
         "permissions": {
             "business-workspace": {
                 "extends": ":workspace",
@@ -44,7 +62,7 @@ def build_config(level, stacks_keys, allowed_domains, extra_deny_paths):
                 "network": network,
             }
         },
-    }
+    })
     return header + render_toml.dumps(config)
 
 
@@ -65,7 +83,8 @@ def build_requirements(level, allowed_domains, extra_deny_paths):
         "allowed_permission_profiles": {":read-only": True, "org-workspace": True},
         "permissions": {
             "filesystem": {
-                "deny_read": _filesystem_deny_paths(extra_deny_paths) + rules.CREDENTIAL_DIRS,
+                "deny_read": [_deny_read_pattern(p) for p in _filesystem_deny_paths(extra_deny_paths)]
+                + rules.CREDENTIAL_DIRS,
             },
             "org-workspace": {
                 "extends": ":workspace",
@@ -90,4 +109,12 @@ def build_requirements(level, allowed_domains, extra_deny_paths):
             ]
         },
     }
+    if allowed_domains:
+        # 管理側でプロキシを起動し、管理者の allow 規則だけを有効にする（docs/10 10.5）。
+        # 利用者の features.network_proxy に依存しない。
+        req["experimental_network"] = {
+            "enabled": True,
+            "managed_allowed_domains_only": True,
+            "domains": {d: "allow" for d in allowed_domains},
+        }
     return "# 組織管理 requirements.toml（team プラン用）\n" + render_toml.dumps(req)
