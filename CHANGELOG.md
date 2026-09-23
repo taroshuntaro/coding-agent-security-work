@@ -59,6 +59,7 @@
 
 ### Security
 - generator・docs/10: Codex のドメイン許可リストが適用されず、サンドボックス内コマンドが無制限に直接通信できる構成になっていた問題を修正。`permissions.<name>.network.enabled = true` はプロキシを起動しないため、許可ドメイン指定時は config.toml に `features.network_proxy = true`、requirements.toml に `[experimental_network]`（`managed_allowed_domains_only = true`）を出力する。`[experimental_network]` は experimental 扱いでネイティブ Windows の対応が限定的なため、受入テストでの確認を前提とする旨を生成 README と docs に明記。
+- generator・docs/10・11: 生成設定が読み取り拒否するホーム配下の資格情報を、`~/.ssh`・`~/.aws`・`~/.kube` の3件から、トークン専用の保存場所（`~/.config/gcloud`・`~/.azure`・`~/.config/gh`・`~/.git-credentials`・`~/.netrc`・`~/.docker/config.json`・`~/.pypirc`）を含む10件へ拡張（Claude Code の `denyRead`〔project・managed〕、Codex の `deny_read`。docs/08 8.7 と一致）。`~/.npmrc`・`~/.gradle/gradle.properties`・`~/.m2/settings.xml` はビルド時に読まれるため既定から除外し、トークンを環境変数やCIから渡す方針を docs/08・11 に記載。定数名を `CREDENTIAL_DIRS` から `CREDENTIAL_PATHS` に変更。
 
 ## 2026-08-04
 

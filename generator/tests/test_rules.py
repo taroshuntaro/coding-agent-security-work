@@ -8,7 +8,19 @@ class TestRules(unittest.TestCase):
         self.assertIn("git push *", rules.BASE_DENY_COMMANDS)
         self.assertIn("sudo *", rules.BASE_DENY_COMMANDS)
         self.assertIn("./.env", rules.SENSITIVE_READ_PATHS)
-        self.assertIn("~/.aws", rules.CREDENTIAL_DIRS)
+        self.assertIn("~/.aws", rules.CREDENTIAL_PATHS)
+
+    def test_credential_paths_cover_tool_tokens(self):
+        # docs/08 8.7: Gitホスティング・レジストリ公開・コンテナレジストリ・クラウドCLIのトークン
+        for path in ["~/.ssh", "~/.aws", "~/.kube", "~/.config/gcloud", "~/.azure",
+                     "~/.config/gh", "~/.git-credentials", "~/.netrc",
+                     "~/.docker/config.json", "~/.pypirc"]:
+            self.assertIn(path, rules.CREDENTIAL_PATHS)
+
+    def test_credential_paths_exclude_build_config(self):
+        # ビルド時に読まれ、拒否するとインストール・ビルドが壊れるため既定には含めない（docs/11 11.4）
+        for path in ["~/.npmrc", "~/.gradle/gradle.properties", "~/.m2/settings.xml"]:
+            self.assertNotIn(path, rules.CREDENTIAL_PATHS)
 
     def test_level_profile_l1(self):
         p = rules.level_profile("L1")

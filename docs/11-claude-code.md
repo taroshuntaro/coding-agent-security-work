@@ -45,7 +45,7 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 | 統制目標 | 個人系プランでの手段 |
 |---|---|
 | bypass禁止（[00 R3](00-red-lines.md)） | `settings.json` で bypass を使わない運用＋受入テスト。**強制ではなく自己規律**のため、外部境界（VM/コンテナ/ネットワーク）で実害を限定 |
-| 資格情報のread遮断 | `sandbox.filesystem.denyRead` に `~/.aws`・`~/.ssh`・`~/.kube`（既定では読める点に注意）＋ホストに資格情報を置かない |
+| 資格情報のread遮断 | `sandbox.filesystem.denyRead` に `~/.aws`・`~/.ssh`・`~/.kube` とツールのトークン保存場所（`~/.config/gh`・`~/.docker/config.json` 等。[08.7](08-secrets.md)）を列挙（既定では読める点に注意）＋ホストに資格情報を置かない |
 | 開始モードの固定 | `~/.claude/settings.json` の `permissions.defaultMode`（Pro/Max/Team の組み込み既定は `auto`。[11.2](#112-レベル別推奨)） |
 | Bash自動承認の抑止 | `autoAllowBashIfSandboxed` は**既定が `true`**（auto-allow）のため、明示的に `false`（regular permissions mode）を設定し受入テストで確認 |
 | ネットワーク限定 | `sandbox.network.allowedDomains`＋コンテナ・ホストのegress制御。許可リスト外を確認なしで拒否する `strictAllowlist: true` は **`~/.claude/settings.json`** に置く（プロジェクト設定では無効。[11.4](#114-プロジェクト向け-settingsjson-例)） |
@@ -118,7 +118,14 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
       "denyRead": [
         "~/.ssh",
         "~/.aws",
-        "~/.kube"
+        "~/.kube",
+        "~/.config/gcloud",
+        "~/.azure",
+        "~/.config/gh",
+        "~/.git-credentials",
+        "~/.netrc",
+        "~/.docker/config.json",
+        "~/.pypirc"
       ]
     },
     "network": {
@@ -132,7 +139,7 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 }
 ```
 
-生成ツール（`generator/`）の `settings.json` は摩擦の小さい明示列挙（`~/.ssh`・`~/.aws`・`~/.kube`）を既定とする。上記の `~/` 全遮断はより強い代替であり、案件要件に応じて手動で切り替える。また生成ツールは、選択したスタックに応じてパッケージレジストリドメイン（例: npm → `registry.npmjs.org`）を `allowedDomains` の既定として対話時に提案する（提案であり、対話中に編集できる）。
+生成ツール（`generator/`）の `settings.json` は摩擦の小さい明示列挙を既定とする。列挙するのは上記の例と同じく、クラウド・SSH・Kubernetes の資格情報と、トークン専用の保存場所（GitHub CLI・Git の資格情報・`~/.netrc`・コンテナレジストリ・`~/.pypirc`）である（[08.7](08-secrets.md)）。`~/.npmrc`・`~/.gradle/gradle.properties`・`~/.m2/settings.xml` もトークンを含み得るが、パッケージのインストールやビルドの際に読まれ、拒否するとビルドが壊れるため既定には含めない。これらにトークンを書かず環境変数やCIから渡すか、案件で使わない場合は手動で `denyRead` へ追加する。上記の `~/` 全遮断はより強い代替であり、案件要件に応じて手動で切り替える。また生成ツールは、選択したスタックに応じてパッケージレジストリドメイン（例: npm → `registry.npmjs.org`）を `allowedDomains` の既定として対話時に提案する（提案であり、対話中に編集できる）。
 
 実際のビルドツールに合わせて `npm` 部分をMaven、Gradle、Python、.NETなどへ置き換える。
 
@@ -207,7 +214,14 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
       "denyRead": [
         "~/.ssh",
         "~/.aws",
-        "~/.kube"
+        "~/.kube",
+        "~/.config/gcloud",
+        "~/.azure",
+        "~/.config/gh",
+        "~/.git-credentials",
+        "~/.netrc",
+        "~/.docker/config.json",
+        "~/.pypirc"
       ],
       "allowManagedReadPathsOnly": true
     },
