@@ -170,6 +170,13 @@ deny_read = [
   "~/.ssh",
   "~/.aws",
   "~/.kube",
+  "~/.config/gcloud",
+  "~/.azure",
+  "~/.config/gh",
+  "~/.git-credentials",
+  "~/.netrc",
+  "~/.docker/config.json",
+  "~/.pypirc",
 ]
 
 [permissions.org-workspace]

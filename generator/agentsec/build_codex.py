@@ -84,7 +84,7 @@ def build_requirements(level, allowed_domains, extra_deny_paths):
         "permissions": {
             "filesystem": {
                 "deny_read": [_deny_read_pattern(p) for p in _filesystem_deny_paths(extra_deny_paths)]
-                + rules.CREDENTIAL_DIRS,
+                + rules.CREDENTIAL_PATHS,
             },
             "org-workspace": {
                 "extends": ":workspace",

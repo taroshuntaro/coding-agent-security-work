@@ -17,7 +17,14 @@ SENSITIVE_READ_PATHS = [
     "./.env", "./.env.*", "./secrets/**", "./config/credentials.json",
 ]
 
-CREDENTIAL_DIRS = ["~/.ssh", "~/.aws", "~/.kube"]
+# ホーム配下の資格情報（docs/08 8.7）。トークン専用の保存場所だけを既定で読み取り拒否する。
+# ~/.npmrc・~/.gradle/gradle.properties・~/.m2/settings.xml はビルド時に読まれ、
+# 拒否するとインストール・ビルドが壊れるため含めない（docs/11 11.4）。
+CREDENTIAL_PATHS = [
+    "~/.ssh", "~/.aws", "~/.kube", "~/.config/gcloud", "~/.azure",
+    "~/.config/gh", "~/.git-credentials", "~/.netrc",
+    "~/.docker/config.json", "~/.pypirc",
+]
 
 DEFAULT_ALLOWED_DOMAINS = ["github.com", "objects.githubusercontent.com"]
 

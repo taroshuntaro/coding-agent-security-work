@@ -103,7 +103,8 @@ class TestBuildCodex(unittest.TestCase):
             self.assertTrue(entry.startswith(("/", "~")), entry)
         for expected in ["/**/.env", "/**/.env.*", "/**/secrets/**",
                          "/**/config/secret.yml", "/**/keys/**", "/**/certs/**",
-                         "~/.gnupg", "/etc/x", "~/.ssh"]:
+                         "~/.gnupg", "/etc/x", "~/.ssh", "~/.config/gh",
+                         "~/.git-credentials"]:
             self.assertIn(expected, deny_read)
 
     def test_config_workspace_roots_keep_relative_globs(self):

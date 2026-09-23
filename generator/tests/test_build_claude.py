@@ -9,6 +9,14 @@ class TestBuildClaude(unittest.TestCase):
         self.assertIn("Bash(git push *)", s["permissions"]["deny"])
         self.assertIn("~/.aws", s["sandbox"]["filesystem"]["denyRead"])
 
+    def test_settings_and_managed_deny_tool_tokens(self):
+        s = build_claude.build_settings("L2", ["npm"], ["github.com"], [])
+        m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
+        for deny_read in (s["sandbox"]["filesystem"]["denyRead"],
+                          m["sandbox"]["filesystem"]["denyRead"]):
+            self.assertIn("~/.config/gh", deny_read)
+            self.assertIn("~/.docker/config.json", deny_read)
+
     def test_settings_allow_includes_stack_commands(self):
         s = build_claude.build_settings("L2", ["npm"], ["github.com"], [])
         self.assertIn("Bash(npm run test *)", s["permissions"]["allow"])

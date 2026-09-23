@@ -27,7 +27,7 @@ def build_settings(level, stacks_keys, allowed_domains, extra_deny_paths):
             "enabled": True,
             "autoAllowBashIfSandboxed": False,
             "allowUnsandboxedCommands": False,
-            "filesystem": {"denyRead": list(rules.CREDENTIAL_DIRS)},
+            "filesystem": {"denyRead": list(rules.CREDENTIAL_PATHS)},
             # strictAllowlist はここに置かない: user / managed / --settings でのみ有効で、
             # リポジトリの .claude/settings.json に置いても無視される（docs/11 11.4）。
             # 個人系は ~/.claude/settings.json、チーム系は managed-settings.json に置く。
@@ -71,7 +71,7 @@ def build_managed_settings(level, stacks_keys, allowed_domains, extra_deny_paths
             "autoAllowBashIfSandboxed": False,
             "allowUnsandboxedCommands": False,
             "filesystem": {
-                "denyRead": list(rules.CREDENTIAL_DIRS),
+                "denyRead": list(rules.CREDENTIAL_PATHS),
                 "allowManagedReadPathsOnly": True,
             },
             "network": {
