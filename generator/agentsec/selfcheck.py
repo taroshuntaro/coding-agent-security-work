@@ -16,11 +16,12 @@ FORBIDDEN_COMPOSE = ["privileged", "network_mode: host", "docker.sock", "/:/host
 def _check_sandbox_auto_allow(path, sb, msgs):
     """autoAllowBashIfSandboxed は**既定が true**（auto-allow。docs/11 11.4・付録C）。
     未指定は「明示 false」と同義ではなく、サンドボックス内 Bash が権限フローを
-    通らない状態になるため、サンドボックス有効時の未指定を FAIL とする。"""
+    通らない状態になる。サンドボックスは user / managed 側で有効化され得るため、
+    このファイルに enabled が無くても未指定を FAIL とする。"""
     if sb.get("autoAllowBashIfSandboxed", False):
         msgs.append(f"FAIL {path}: autoAllowBashIfSandboxed が true です (11.4)")
-    elif sb.get("enabled") and "autoAllowBashIfSandboxed" not in sb:
-        msgs.append(f"FAIL {path}: autoAllowBashIfSandboxed が未指定です。"
+    elif "autoAllowBashIfSandboxed" not in sb:
+        msgs.append(f"FAIL {path}: sandbox.autoAllowBashIfSandboxed が未指定です。"
                     "既定は true（auto-allow）のため明示的に false を指定する (11.4)")
 
 

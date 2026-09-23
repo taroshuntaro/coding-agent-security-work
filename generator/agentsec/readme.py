@@ -33,18 +33,26 @@ def apply_steps(file_keys):
     steps = []
     if "claude-code/.claude/settings.json" in file_keys:
         steps.append("- Claude Code: `claude-code/.claude/settings.json` をリポジトリへ配置")
+        has_managed = "claude-code/managed-settings.json" in file_keys
+        if has_managed:
+            scope_hint = ("個人系は各自の `~/.claude/settings.json` に置き、チーム系は同梱の "
+                          "`claude-code/managed-settings.json` で固定する")
+        else:
+            # managed-settings.json は team かつ L3+ でのみ生成される。無い束で
+            # 「管理設定で固定」とだけ書くと置き場所が存在しない（docs/11 11.4）。
+            scope_hint = ("本生成物には管理設定が含まれない（チーム系かつ L3 以上でのみ生成）"
+                          "ため、プランを問わず各自の `~/.claude/settings.json` に置く。"
+                          "組織が管理設定を別途配布できる場合はそちらで固定する")
         steps.append("- Claude Code 補足: `sandbox.network.strictAllowlist`（許可リスト外ホストを"
                      "確認なしで拒否）は user / managed 設定でのみ有効で、リポジトリの "
-                     "`.claude/settings.json` では無視される。個人系は各自の "
-                     "`~/.claude/settings.json` に `\"sandbox\": {\"network\": "
-                     "{\"strictAllowlist\": true}}` を追加し、チーム系は組織の管理設定で"
-                     "固定する（docs/11 11.4）")
+                     "`.claude/settings.json` では無視される。" + scope_hint +
+                     "（値: `\"sandbox\": {\"network\": {\"strictAllowlist\": true}}`。"
+                     "docs/11 11.4）")
         steps.append("- Claude Code 補足: Pro / Max / Team プランでは auto mode が組み込み既定の"
                      "開始モードになっている。**VS Code 拡張はプロジェクト設定を開始モードの決定に"
-                     "使わない**ため、本設定の `permissions.defaultMode` と同じ値を "
-                     "`~/.claude/settings.json`（チーム系は組織の管理設定）にも置く。"
-                     "置かないと拡張から起動したセッションが auto mode で始まる。"
-                     "反映は受入テストで確認する（docs/11 11.2・11.10）")
+                     "使わない**ため、本設定の `permissions.defaultMode` と同じ値をもう1か所に"
+                     "も置く。" + scope_hint + "。置かないと拡張から起動したセッションが "
+                     "auto mode で始まる。反映は受入テストで確認する（docs/11 11.2・11.10）")
     if "claude-code/managed-settings.json" in file_keys:
         steps.append("- Claude Code 管理設定: `claude-code/managed-settings.json` を"
                      "リポジトリ外の管理パスへ配置")

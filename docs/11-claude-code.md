@@ -160,6 +160,8 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
   "disableArtifact": true,
   "disableRemoteControl": true,
   "disableClaudeAiConnectors": true,
+  "crossSessionInbound": "refuse",
+  "isolatePeerMachines": true,
   "autoMemoryEnabled": false,
   "cleanupPeriodDays": 7,
   "permissions": {
@@ -246,7 +248,7 @@ Claude Codeでは、permission mode、allow/ask/denyルール、組み込みBash
 - `disableBypassPermissionsMode` は**特定バージョンで効かなかった実例がある**（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)）。同Issueは**修正されないまま closed（not planned）**となっている（2026-08-04 確認）。設定後に[15 受入テスト](15-acceptance-tests.md)でbypassが実際に拒否されることを確認し、拒否されないバージョンでは外部境界（コンテナ・VM・ネットワーク）で代替する（[00 R5](00-red-lines.md)）。
 - `enableArtifact: false` は Artifact ツール（セッション出力を claude.ai 上の Web ページとして公開する機能）を無効化する。どのスコープからも再有効化できないロックとして働く。**本例は旧キー `disableArtifact: true` を併記している**: `enableArtifact` は v2.1.196 以降でしか認識されず、それ未満のクライアントでは無効化が効かないためである。旧キーは deprecated だが `true` は引き続き同等に扱われると公式が明記しており、併記しても競合しない（`requiredMinimumVersion` で v2.1.196 以上を強制する場合は新キーのみでよい）。`disableRemoteControl`、`disableClaudeAiConnectors`、`autoMemoryEnabled`、`cleanupPeriodDays`（既定 30 日）とあわせ、組織のデータ保持・外部共有方針に合わせて調整する。
 - `strictPluginOnlyCustomization`（`true`、または `["skills", "agents", "hooks", "mcp"]` の部分集合）で、user / project 由来のスキル・カスタムコマンド・サブエージェント・Hooks・MCP を遮断し、プラグイン（`strictKnownMarketplaces` で供給元を限定）と管理設定由来だけを残せる（[11.9](#119-指示拡張レイヤーの統制subagentsoutput-stylesskillsrules)・[13](13-mcp-plugins-hooks.md)）。
-- 他セッションからのメッセージ受信は `crossSessionInbound: "refuse"`、Remote Control は `disableRemoteControl`、バックグラウンドエージェントは `disableAgentView` で止める（[11.11](#1111-セッション間メッセージremote-controlバックグラウンドエージェント)）。HTTP Hooks は `allowedHttpHookUrls: []` で全面遮断できる（[13](13-mcp-plugins-hooks.md)）。
+- 本例は他セッションからのメッセージ受信を `crossSessionInbound: "refuse"` で拒否し、他マシンの自セッションへの送信を `isolatePeerMachines: true` で承認必須にしている（[11.11](#1111-セッション間メッセージremote-controlバックグラウンドエージェント)。生成ツールも L3 以上の管理設定で同じ値を出力する）。Remote Control は `disableRemoteControl`、バックグラウンドエージェントは必要に応じて `disableAgentView` で止める。HTTP Hooks は `allowedHttpHookUrls: []` で全面遮断できる（[13](13-mcp-plugins-hooks.md)）。
 - v2.1.259 以降、`allowedMcpServers` は**利用者が追加したサーバーだけ**を対象とし、`managed-mcp.json` で配布したサーバーは許可リストで絞られない。組織配布したサーバーを止めるには `deniedMcpServers` を使う（どの配布経路のサーバーにも効く）。`managedMcpServers` で HTTP/SSE サーバーを組織配布できる。
 - server-managed settings（claude.ai 管理コンソールからの配信）は、取得失敗時に**既定で fail-open**（キャッシュがあればキャッシュ、無ければ管理設定なしで起動して警告）であり、`forceRemoteSettingsRefresh: true` で起動を止められる。稼働中の毎時再取得は常に fail-open。利用者が `CLAUDE_CODE_USE_BEDROCK` 等のプロバイダ変数や独自の `ANTHROPIC_BASE_URL` をシェルでエクスポートすると**取得自体がスキップ**される。公式ドキュメントも「クライアント側の統制であり、非管理端末では管理者権限なしに回避できる」と明記しているため、MDM／OS 管理パスへの配布（endpoint-managed）を基本とし、クラウドセッション向けに server-managed を併用する。
 - サンドボックスを弱める、または TLS 終端・独自プロキシ・資格情報注入を伴う server-managed 設定（`tlsTerminate`・`httpProxyPort`・`sandbox.credentials` の `mask`・`filesystem.disabled`・`allowAppleEvents` 等）と Hooks は、利用者の承認ダイアログを経て初めて適用される（v2.1.251 以降。拒否すると Claude Code は終了する）。`deny` だけの `sandbox.credentials` は承認不要。

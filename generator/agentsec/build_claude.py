@@ -50,6 +50,10 @@ def build_managed_settings(level, stacks_keys, allowed_domains, extra_deny_paths
         "disableArtifact": True,
         "disableRemoteControl": True,
         "disableClaudeAiConnectors": True,
+        # セッション間メッセージ（docs/11 11.11）: 機密案件では受信を拒否し、
+        # 他マシンの自セッションへの送信は bypass 中でも承認を求める。
+        "crossSessionInbound": "refuse",
+        "isolatePeerMachines": True,
         "autoMemoryEnabled": False,
         "cleanupPeriodDays": 7,
         "permissions": {

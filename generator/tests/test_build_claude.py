@@ -75,3 +75,9 @@ class TestBuildClaude(unittest.TestCase):
         m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
         self.assertIs(m["enableArtifact"], False)
         self.assertIs(m["disableArtifact"], True)
+
+    def test_managed_locks_cross_session_messaging(self):
+        # docs/11 11.11: 機密案件（L3+）は受信を refuse、他マシンへの送信は承認必須
+        m = build_claude.build_managed_settings("L3", ["npm"], ["github.com"], [], [])
+        self.assertEqual(m["crossSessionInbound"], "refuse")
+        self.assertIs(m["isolatePeerMachines"], True)
