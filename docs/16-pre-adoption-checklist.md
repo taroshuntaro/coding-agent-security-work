@@ -35,9 +35,9 @@
 - [ ] 読み取り・書き込み範囲を定義したか
 - [ ] ワークスペース外をdenyしたか
 - [ ] full access・bypassを管理的に禁止したか（[00 R3](00-red-lines.md)）
-- [ ] 開始時の権限モードを明示したか（Claude Code は Pro/Max/Team で auto mode が組み込み既定。[11.2](11-claude-code.md)）
-- [ ] 自動承認レビュー（Claude Code auto mode・Codex auto-review）を採用するか決め、採用する場合も隔離境界とみなしていないか（[11.10](11-claude-code.md)・[10.7](10-codex.md)）
-- [ ] user / managed でしか効かないキー（`strictAllowlist` 等）をリポジトリ設定に置いて「設定済み」としていないか（[11.4](11-claude-code.md)）
+- [ ] 開始時の権限モードを明示したか（製品の組み込み既定に任せない。例: Claude Code は Pro/Max/Team で auto mode が組み込み既定。[11.2](11-claude-code.md)）
+- [ ] 別モデルによる自動承認レビュー（例: Claude Code auto mode・Codex auto-review）を採用するか決め、採用する場合も隔離境界とみなしていないか（[11.10](11-claude-code.md)・[10.7](10-codex.md)）
+- [ ] 置き場所（user / project / managed）によって無視される設定を、効かない場所に置いて「設定済み」としていないか（例: Claude Code `strictAllowlist` はプロジェクト設定では無効。[11.4](11-claude-code.md)）
 - [ ] 自動許可・都度確認・拒否コマンドを定義したか
 - [ ] 設定をユーザーやリポジトリから解除できないか
 - [ ] 管理設定の適用状態を確認する手順があるか
@@ -46,8 +46,8 @@
 ## 16.4 ネットワーク
 
 - [ ] モデル通信とコマンド通信を分けているか
-- [ ] Codexの`disabled` / `cached` / `indexed` / `live`と、Claude Codeの`WebSearch` / `WebFetch`の方針を分けて決めたか
-- [ ] Codexでコマンドネットワークのドメイン許可リストを使う場合、`features.network_proxy = true`（チーム系は管理側 `[experimental_network]`）も設定したか（無いと許可リストが適用されず直接通信になる。[10.4](10-codex.md)）
+- [ ] 組み込みWeb検索・Webフェッチと、シェルからの通信の方針を分けて決めたか（例: Codexの`web_search`（`disabled` / `cached` / `indexed` / `live`）、Claude Codeの`WebSearch` / `WebFetch`）
+- [ ] ドメイン許可リストが実際に適用される前提条件（プロキシの起動など）を満たしたか（例: Codex は `features.network_proxy = true`、チーム系は管理側 `[experimental_network]` が無いと許可リストが適用されず直接通信になる。[10.4](10-codex.md)）
 - [ ] 外向き通信はdeny by defaultか
 - [ ] 必要ドメインを棚卸ししたか
 - [ ] 本番API・DB・管理画面への到達を防いだか
@@ -70,7 +70,7 @@
 - [ ] 各連携の権限と通信先を確認したか
 - [ ] 本番書き込み権限がないか
 - [ ] 更新・無効化・監査方法があるか
-- [ ] 指示・拡張ファイル（`CLAUDE.md`・`.claude/rules/`・スキル・サブエージェント定義・出力スタイル）をコードレビュー対象にしたか（[2.7](02-terms-and-control-layers.md)・[11.9](11-claude-code.md)）
+- [ ] 指示・拡張ファイル（`AGENTS.md`・`CLAUDE.md` 等のプロジェクト指示、パススコープ・ルール、スキル、サブエージェント定義、出力スタイル）をコードレビュー対象にしたか（[2.7](02-terms-and-control-layers.md)・[11.9](11-claude-code.md)）
 - [ ] 出力スタイル／システムプロンプト追記で既定の安全指示を上書きしていないか
 - [ ] サブエージェント経由のツール実行も権限・サンドボックス・外側境界で限定されることを受入テストで確認したか
 - [ ] セッション間メッセージ・Remote Control・バックグラウンドエージェントの方針を決めたか（[11.11](11-claude-code.md)）

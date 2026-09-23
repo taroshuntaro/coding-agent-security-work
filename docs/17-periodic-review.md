@@ -21,9 +21,9 @@
 - 設定キーの有効スコープ（user / project / managed）が変わっていないか（例: `strictAllowlist` はプロジェクト設定では無効）
 - 設定キーの廃止・既定値変更
 - サンドボックスの対応OS・制約
-- 管理設定が古いクライアントで無視されないか（Claude Code は `requiredMinimumVersion` で範囲外起動を拒否できる。Codex は全台の対応バージョンを別途確認）
+- 管理設定が古いクライアントで無視されないか（例: Claude Code は `requiredMinimumVersion` で範囲外起動を拒否できる。Codex は全台の対応バージョンを別途確認）
 - ネットワーク要件の変更
-- Codex の `[experimental_network]`（experimental で変更され得る）と `features.network_proxy` の仕様が変わっていないか（[10.5](10-codex.md)）
+- experimental・beta 扱いの設定に依存している統制の仕様が変わっていないか（例: Codex の `[experimental_network]` と `features.network_proxy`。[10.5](10-codex.md)）
 - データ取扱条件の変更
 
 > [!NOTE]

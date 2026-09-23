@@ -32,6 +32,18 @@ MCP、プラグイン、Hooksは、エージェントの能力を拡張すると
 - リモートMCPのドメインをネットワーク許可リストへ反映
 - 設定ファイルを信頼する前にレビュー
 - 更新時に再審査
+- 許可リストに加え、明示拒否リストを併用する（拒否を優先）
+- CLI引数など、リポジトリ外・未審査の経路からの連携注入（sideload）を起動時に拒否する
+- 一律停止が必要な環境では、Hooksを全面無効化できる設定を用意しておく
+- 任意URLへ送信するHooks（HTTP Hooks等）は外部送信経路として扱い、送信先URLと送信に使える環境変数を許可リストで限定する
+- プラグイン・拡張の供給元（マーケットプレイス等）を許可リストで固定し、インストール時にスクリプトを実行する供給経路を禁止する
+- user / project 由来の拡張（スキル・サブエージェント・Hooks・MCP）を一括遮断し、組織配布分だけに限定できる製品では、上位レベルで採用を検討する
+- 組織配布した連携にも許可・拒否リストが効くかを確認する（許可リストが利用者追加分だけを対象とする製品がある）
+
+### 製品別の実装例
+
+上記の統制目標を、Claude Code・Codexでは次の設定で実装できる。他製品では同じ目的の機能に読み替える。設定キーと対応バージョンは変動するため、[付録C](appendix-c-volatile-values.md)と[10](10-codex.md)・[11](11-claude-code.md)章で確認する。
+
 - 許可リスト（`allowedMcpServers`）に加え、明示拒否（`deniedMcpServers`）を併用する（denylist 優先）
 - `.mcp.json` 由来の特定サーバーは `disabledMcpjsonServers`（Claude Code）で名指し拒否できる（許可／拒否リストの補完。[付録C](appendix-c-volatile-values.md)）
 - CLIからの sideload（`--mcp-config`・`--plugin-dir`・`--plugin-url`・`--agents`）は `disableSideloadFlags`（Claude Code）で起動時に拒否し、リポジトリ外・未審査の連携注入を防ぐ（[付録C](appendix-c-volatile-values.md)）

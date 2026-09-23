@@ -9,7 +9,7 @@
 ├─ エディタのUI
 ├─ コンテナランタイム
 └─ 開発コンテナ
-   ├─ Codex / Claude Code
+   ├─ コーディングエージェント（Codex・Claude Code 等）
    ├─ Git
    ├─ 言語ランタイム・SDK
    ├─ Lint・テスト・ビルドツール
@@ -28,7 +28,7 @@
                                   ▼
                            開発コンテナ
                            ├─ /workspace/project
-                           └─ Codex / Claude Code
+                           └─ コーディングエージェント
 ```
 
 IDEがコンテナ接続に対応していなくても採用できる。ホストのエディタで編集し、エージェントは `docker exec`、Compose、専用ランチャーなどからコンテナ内で起動する。
@@ -48,7 +48,7 @@ IDEがコンテナ接続に対応していなくても採用できる。ホス�
    ↓
 専用VM・VDI・クラウド開発環境
 └─ コンテナまたは直接実行
-   ├─ Codex / Claude Code
+   ├─ コーディングエージェント（Codex・Claude Code 等）
    └─ プロジェクト
 ```
 
