@@ -17,6 +17,15 @@
 - generator: `selfcheck.py` が project settings 内の `strictAllowlist` / `tlsTerminate` / `filesystem.disabled`（user / managed でのみ有効なキー）を検出したとき WARN。
 - generator: `selfcheck.py` が Codex のドメイン許可リストをプロキシ無しで使う設定（config.toml で `features.network_proxy` 無し、requirements.toml で `[experimental_network]` 無し）を FAIL、絶対パスでも `~` 始まりでもない `deny_read` を WARN にする。受入チェックリストの Codex 行にプロキシ込みの実拒否確認を追加（Codex 向け2行）。
 - docs: 10.4 に `network.enabled` と `features.network_proxy` の組み合わせごとの挙動表、10.5 に `[experimental_network]` の設定例と注意、16.4・17・15 にプロキシ有効化の確認項目を追加。
+- docs/03: 3.2「プロンプトインジェクションは防げない前提で設計する」を新設。非信頼入力・機密データ・外部送信の3要素を1セッションで同時に成立させない原則（lethal trifecta／Agents Rule of Two）を製品非依存の SHOULD として記載し、docs/05・16・19 から参照。
+- docs/03: リスク表に「エージェントCLIの悪用」「MCP経由の注入・権限濫用」「メモリ汚染」「無人実行・CIでの悪用」を追加。Nx「s1ngularity」事件（2025-08）を事例として記載し、3.3 に OWASP Top 10 for Agentic Applications 2026 との対応表を追加。
+- docs/04: 実行構成に 4.4「ベンダーのクラウド環境で動くエージェント」と 4.5「CI・スケジュール実行など無人で動くエージェント」を追加（既存の 4.4・4.5 は 4.6・4.7 へ繰り下げ）。docs/05 に「無人実行の扱い」を追加。
+- docs/14: 14.4「CI上でエージェントを動かす場合」を新設（起動できる人の限定、`pull_request_target`、トークン権限、シェルへの直接展開の禁止、使い捨てランナー、公式 Action の既定）。
+- docs/07: 7.4「依存パッケージの追加」を新設。slopsquatting への対策と、npm・pnpm・Yarn・Bun・uv・pip のクールダウン設定（設定名・単位・既定・導入版）を各公式ドキュメントで確認して記載。
+- docs/08: 8.7「エージェント自身とホスト上のツールの資格情報」を新設（GitHub CLI・`~/.npmrc`・`~/.docker/config.json`・エージェントのログイン情報等。ログイン済みのエージェントCLIが悪用される経路と対策）。
+- docs/13: 13.4「MCP特有の脅威」を新設（ツール定義への指示埋め込み、承認後の定義変更、実行結果経由の注入、ツール名の衝突、token passthrough、ローカルMCPの実行権限）。
+- docs/02: 2.7 に自動メモリ・永続メモリ（メモリ汚染）を追加。
+- docs/20: 「AIエージェントのセキュリティ（製品非依存）」「事例」「CI・依存パッケージ」の節を追加（OWASP、MCP Security Best Practices、NIST SP 800-218A、AI事業者ガイドライン第1.2版等）。
 
 ### Changed
 - docs: 2026-08-04 以降の Claude Code の更新を一次資料（settings reference・sandboxing・permission modes・managed settings・server-managed settings・CHANGELOG v2.1.278 まで）で確認し反映。
@@ -36,11 +45,17 @@
   - 管理 `deny_read` の書式（絶対パスか `~` 始まり）と、ネイティブ Windows ではシェルのサブプロセスに効かない制約、Codex web のエージェント通信設定、追加の管理キー、最新安定版 0.156.0 を付録C に記録。
 - 付録C の基準確認日（Codex）を 2026-08-04 から 2026-09-23 に更新。`docs/README.md` の仕様確認基準日も同様。
 - generator: 生成物 README の Claude Code 適用手順を拡充。`strictAllowlist` と `defaultMode` の置き場所を、管理設定が生成物に含まれるか（チーム系かつ L3 以上）に応じて `~/.claude/settings.json` または同梱の `managed-settings.json` へ案内。
+- docs: 製品非依存層（08・13・15・16・17）に混在していた Claude Code／Codex 固有の設定キーを「製品別の実装例」として本文の統制目標から分離。節番号は generator・付録C からの参照のため維持。
+- docs/README: 12章を製品固有層（非依存層と2製品の橋渡し）に分類し直し、層分類の表と目次の不一致を解消。
+- docs/19: 判断基準に3要素の同時成立と無人実行の2問を追加（一般19問＋本ガイド固有2問）。
+- docs/14・17・付録B: エージェント由来の変更のレビューを依頼者以外が行う等の Git 運用、インシデント時のエージェント固有の失効・保全・除去手順、利用者ルール（権限スキップのエイリアス禁止、依存パッケージの実在確認）を追加。付録A に実行形態と無人実行の記入欄を追加。
 
 ### Fixed
 - generator: Codex の `requirements.toml` の `deny_read` を絶対パスの glob（例: `/**/.env`）で出力する。管理 `deny_read` は絶対パスか `~` 始まりが公式の書式で、従来の相対 glob（`**/.env`）は公式の例にない形だった。
 - generator: 生成する project `settings.json` から `sandbox.network.strictAllowlist` を除去。同キーは user / managed / `--settings` でのみ有効で、リポジトリの `.claude/settings.json` に置いても無視される（docs/11 11.4 の設定例も同様に修正。設定の存在と実効性が一致していなかった）。
 - generator: `selfcheck.py` が `autoAllowBashIfSandboxed` 未指定を安全側とみなしていた前提を修正。既定は `true`（auto-allow）のため、`enabled` の有無に関わらず未指定を FAIL とし、`managed-settings.json` も検査対象に加えた。
+- docs/06: 6.3 の「最右行」を「最下行」に修正。
+- docs/15: Issue #44642 の確認日を docs/00 と同じ 2026-09-21 に揃えた。
 
 ### Security
 - generator・docs/10: Codex のドメイン許可リストが適用されず、サンドボックス内コマンドが無制限に直接通信できる構成になっていた問題を修正。`permissions.<name>.network.enabled = true` はプロキシを起動しないため、許可ドメイン指定時は config.toml に `features.network_proxy = true`、requirements.toml に `[experimental_network]`（`managed_allowed_domains_only = true`）を出力する。`[experimental_network]` は experimental 扱いでネイティブ Windows の対応が限定的なため、受入テストでの確認を前提とする旨を生成 README と docs に明記。

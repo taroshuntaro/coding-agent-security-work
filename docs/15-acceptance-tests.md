@@ -5,7 +5,7 @@
 設定ファイルを配布しただけで完了とせず、対象OS・製品バージョン・実行形態ごとにテストする（[00 R5](00-red-lines.md)）。テスト用のダミー値と隔離環境を使用し、本物のシークレットや本番サービスを使わない。
 
 > [!IMPORTANT]
-> **「設定したのに効かない」は理論ではなく実際に起きている。** たとえばClaude Codeの `disableBypassPermissionsMode` は、managed-settings.jsonに記述しても特定バージョンで無効だった実例があり、同Issueは修正されないままcloseされている（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)、closed as not planned・2026-08-04 確認）。`autoAllowBashIfSandboxed` にもサンドボックス無効化コマンドの自動承認によるバイパス報告がある（[#29016](https://github.com/anthropics/claude-code/issues/29016)、closed・修正バージョン未特定。[#43713](https://github.com/anthropics/claude-code/issues/43713) は過剰プロンプトの別件で closed）。さらに `strictAllowlist` のように**置く場所（user / project / managed）によって無視される**キーもある（[11.4](11-claude-code.md)）。だからこそ、設定の**存在**ではなく**実拒否**を確認する。
+> **「設定したのに効かない」は理論ではなく実際に起きている。** たとえばClaude Codeの `disableBypassPermissionsMode` は、managed-settings.jsonに記述しても特定バージョンで無効だった実例があり、同Issueは修正されないままcloseされている（[Issue #44642](https://github.com/anthropics/claude-code/issues/44642)、closed as not planned・2026-09-21 再確認）。`autoAllowBashIfSandboxed` にもサンドボックス無効化コマンドの自動承認によるバイパス報告がある（[#29016](https://github.com/anthropics/claude-code/issues/29016)、closed・修正バージョン未特定。[#43713](https://github.com/anthropics/claude-code/issues/43713) は過剰プロンプトの別件で closed）。さらに `strictAllowlist` のように**置く場所（user / project / managed）によって無視される**キーもある（[11.4](11-claude-code.md)）。だからこそ、設定の**存在**ではなく**実拒否**を確認する。
 
 ## 15.1 テストマトリクス
 
@@ -25,6 +25,13 @@
 | コンテナ内からホストのホーム、Docker socketへアクセス | 拒否 |
 | セッション終了・環境破棄後 | シークレット、履歴、不要キャッシュが残らない |
 | 製品アップデート後 | 同じテスト結果が維持される |
+
+### 製品別の追加観点（Claude Code・Codex）
+
+上表の共通観点に加え、2製品では次の「書いても効かないことがある」設定を確認する。他製品では、同様に**置き場所・前提条件・既定値の変化で効かなくなる設定**を洗い出して行を追加する。
+
+| テスト | 期待結果 |
+|---|---|
 | `requiredMinimumVersion` を設定したとき、それ未満のクライアントで起動が拒否されること（チーム系 L3+） | 拒否 |
 | プロジェクト設定で `denyRead:["~/"]＋allowRead:["."]` を用いた場合に、`~/.ssh` 等が読めず、プロジェクト内ファイルは読めること（堅牢パターン採用時） | `~/.ssh` は拒否・プロジェクト内は許可 |
 | `strictAllowlist` を user / managed 設定に置いたとき、許可リスト外ホストへのサンドボックス内通信が**確認なしで拒否**されること（プロジェクト設定だけに置いた状態では確認プロンプトに落ちることも併せて確認） | 拒否 |
@@ -35,7 +42,7 @@
 | Codex auto-review（Guardian）採用時、`.env` 読み取り・`git push`・ワークスペース外書き込みの escalation が自動承認されないこと | 拒否または人間の承認 |
 
 > [!NOTE]
-> 生成ツール（`generator/`）は、本表の追加行のうち製品別の観点を `acceptance/checklist.md` へ出力する（Claude Code 向け4行・Codex 向け2行）。本表を更新したときは生成ツール側（`agentsec/checklist.py`）も合わせて更新する。
+> 生成ツール（`generator/`）は、上記「製品別の追加観点」表の行のうち一部を `acceptance/checklist.md` へ出力する（Claude Code 向け4行・Codex 向け2行）。本表を更新したときは生成ツール側（`agentsec/checklist.py`）も合わせて更新する。
 
 ## 15.2 記録
 
